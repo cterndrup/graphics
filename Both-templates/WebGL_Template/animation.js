@@ -93,22 +93,42 @@ function update_camera( self, animation_delta_time )
 
 // *******************************************************
 // drawLeg(): draw a leg of the bee
-function drawLeg(object, m_transform, material, time) {
+function drawLeg(object, m_transform, material, material2, clockwise) {
 
 	var model_transform = m_transform;
-	var animation_time = time;
+	var time = object.graphicsState.animation_time;
+	var stack = [];
+	var spin = clockwise ? -1 : 1;
+	var rot_x = (time/50) % 90;
+	if (rot_x > 45) rot_x = 90 - rot_x;
 
 	// upper half of leg
 	// upper leg animation
 	// translate, rotate, translate back
+	model_transform = mult(model_transform, translate(0, 0.5, 0.125*spin));
+	model_transform = mult(model_transform, rotate(rot_x, spin, 0, 0));	
+	model_transform = mult(model_transform, translate(0, -0.5, -0.125*spin));
+
+	// scale
+	stack.push(model_transform);
+	model_transform = mult(model_transform, scale(0.25, 1, 0.25));
+	
 	object.m_cube.draw(object.graphicsState, model_transform, material);
 
+	model_transform = stack.pop();
 	model_transform = mult(model_transform, translate(0, -1, 0));	
 
 	// lower half of leg
 	// lower leg animation
 	// translate, rotate, translate back
-	object.m_cube.draw(object.graphicsState, model_transform, material);
+	model_transform = mult(model_transform, translate(0, 0.5, 0.125*spin));
+	model_transform = mult(model_transform, rotate(1.25*rot_x, -spin, 0, 0));
+	model_transform = mult(model_transform, translate(0, -0.5, -0.125*spin));
+
+	// scale	
+	model_transform = mult(model_transform, scale(0.25, 1, 0.25));
+
+	object.m_cube.draw(object.graphicsState, model_transform, material2);
 }
 
 // *******************************************************	
@@ -134,6 +154,7 @@ Animation.prototype.display = function(time)
 		
 		var grass = new Material( vec4(0.28, 0.52, 0, 1), 1, 1, 1, 40);
 		var blue  = new Material( vec4(0, 0, 1, 1), 1, 1, 1, 40);
+		var red   = new Material( vec4(1, 0, 0, 1), 1, 1, 1, 40);
 			
 		/**********************************
 		Start coding here!!!!
@@ -150,20 +171,23 @@ Animation.prototype.display = function(time)
 		model_transform = stack.pop();
 	
 		// bee rotation and translation
-		var x_movement = 8*Math.sin(this.graphicsState.animation_time/400);
-		var y_movement = 2*Math.sin(this.graphicsState.animation_time/100);
-		var z_movement = 8*Math.cos(this.graphicsState.animation_time/400);
+		var x_movement = 8*Math.sin(this.graphicsState.animation_time/1000);
+		var y_movement = 2*Math.sin(this.graphicsState.animation_time/400);
+		var z_movement = 8*Math.cos(this.graphicsState.animation_time/1000);
 		model_transform = mult(model_transform, rotate(this.graphicsState.animation_time/50, 0, 1, 0));
+		//model_transform = mult(model_transform, translate(0, 1, 0));
+		//model_transform = mult(model_transform, rotate(90, 0, 1, 0));
 		model_transform = mult(model_transform, translate(x_movement, y_movement, z_movement));
+		
 
 		// draw bee head
-		//this.m_sphere.draw(this.graphicsState, model_transform, purplePlastic);
+		this.m_sphere.draw(this.graphicsState, model_transform, purplePlastic);
 		
 		// draw bee body
 		stack.push(model_transform);
 		model_transform = mult(model_transform, scale(2, 1, 1));
 		model_transform = mult(model_transform, translate(1, 0, 0));
-                this.m_cube.draw(this.graphicsState, model_transform, blue);
+                this.m_cube.draw(this.graphicsState, model_transform, purplePlastic);
 		model_transform = stack.pop();
 
 		// draw bee sting
@@ -201,23 +225,21 @@ Animation.prototype.display = function(time)
 
 		// draw bee's legs
 		stack.push(model_transform);
-		model_transform = mult(model_transform, scale(0.25, 1, 0.25));
-		model_transform = mult(model_transform, translate(4, -1, 2.5));
+		model_transform = mult(model_transform, translate(1, -1, 0.625));
 
 		for (var i=0; i<3; i++) {
-			model_transform = mult(model_transform, translate(2, 0, 0));
-			drawLeg(this, model_transform, blue);
+			model_transform = mult(model_transform, translate(0.5, 0, 0));
+			drawLeg(this, model_transform, purplePlastic, purplePlastic, true);
 		}
 	
 		model_transform = stack.pop();
 		stack.push(model_transform);
-		model_transform = mult(model_transform, scale(0.25, 1, 0.25));
-		model_transform = mult(model_transform, translate(4, -1, -2.5));
+		model_transform = mult(model_transform, translate(1, -1, -0.625));
 		
 		for (var i=0; i<3; i++) {
-			model_transform = mult(model_transform, translate(2, 0, 0));
-			drawLeg(this, model_transform, blue);
-		}	
+			model_transform = mult(model_transform, translate(0.5, 0, 0));
+			drawLeg(this, model_transform, purplePlastic, purplePlastic, false);
+		}
 		
 	
 		// draw tree
