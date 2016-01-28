@@ -93,10 +93,10 @@ function update_camera( self, animation_delta_time )
 
 // *******************************************************
 // drawLeg(): draw a leg of the bee
-function drawLeg(object, m_transform, material, material2, clockwise) {
+Animation.prototype.drawLeg = function(m_transform, material, material2, clockwise) {
 
 	var model_transform = m_transform;
-	var time = object.graphicsState.animation_time;
+	var time = this.graphicsState.animation_time;
 	var stack = [];
 	var spin = clockwise ? -1 : 1;
 	var rot_x = (time/50) % 90;
@@ -113,7 +113,7 @@ function drawLeg(object, m_transform, material, material2, clockwise) {
 	stack.push(model_transform);
 	model_transform = mult(model_transform, scale(0.25, 1, 0.25));
 	
-	object.m_cube.draw(object.graphicsState, model_transform, material);
+	this.m_cube.draw(this.graphicsState, model_transform, material);
 
 	model_transform = stack.pop();
 	model_transform = mult(model_transform, translate(0, -1, 0));	
@@ -128,10 +128,16 @@ function drawLeg(object, m_transform, material, material2, clockwise) {
 	// scale	
 	model_transform = mult(model_transform, scale(0.25, 1, 0.25));
 
-	object.m_cube.draw(object.graphicsState, model_transform, material2);
+	this.m_cube.draw(this.graphicsState, model_transform, material2);
 }
 
-// *******************************************************	
+// *******************************************************
+// drawFlower(): draws the flower in the bee's world
+
+// write code here
+
+// *******************************************************
+
 // display(): called once per frame, whenever OpenGL decides it's time to redraw.
 
 Animation.prototype.display = function(time)
@@ -229,7 +235,7 @@ Animation.prototype.display = function(time)
 
 		for (var i=0; i<3; i++) {
 			model_transform = mult(model_transform, translate(0.5, 0, 0));
-			drawLeg(this, model_transform, purplePlastic, purplePlastic, true);
+			this.drawLeg(model_transform, purplePlastic, purplePlastic, true);
 		}
 	
 		model_transform = stack.pop();
@@ -238,7 +244,7 @@ Animation.prototype.display = function(time)
 		
 		for (var i=0; i<3; i++) {
 			model_transform = mult(model_transform, translate(0.5, 0, 0));
-			drawLeg(this, model_transform, purplePlastic, purplePlastic, false);
+			this.drawLeg(model_transform, purplePlastic, purplePlastic, false);
 		}
 		
 	
