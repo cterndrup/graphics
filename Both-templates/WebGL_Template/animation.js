@@ -97,7 +97,7 @@ Animation.prototype.drawLeg = function(m_transform, material, material2, clockwi
 	var model_transform = m_transform;
 	var stack = [];
 	var spin = clockwise ? -1 : 1;
-	var rot_x = (time/50) % 120;
+	var rot_x = (time/40) % 120;
 	if (rot_x > 60) rot_x = 120 - rot_x;
 
 	// upper half of leg
