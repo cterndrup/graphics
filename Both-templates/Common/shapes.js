@@ -573,3 +573,50 @@ function text_line( string )		// Draws a rectangle textured with images of ASCII
 
 	}
 inherit(text_line, shape);
+
+function triangle(points_transform) {
+	shape.call(this);
+	//if (!arguments.length) return;
+	this.populate(this, points_transform);
+	this.init_buffers();
+}
+inherit(triangle, shape);
+
+triangle.prototype.populate = function(recipient, points_transform) {
+	recipient.vertices = [vec3(0,0,0), vec3(1,0,0), vec3(0,1,0)];
+	recipient.normals = [vec3(0,0,1), vec3(0,0,1), vec3(0,0,1)];
+	recipient.texture_coords = [vec2(0,0), vec2(0,1), vec2(1,0)];
+	recipient.indices = [0, 1, 2];
+
+};
+
+/*
+function tire(points_transform) {
+	shape.call(this);
+	//if (!arguments.length) return;
+	this.populate(this, points_transform);
+	this.init_buffers();
+}
+inherit(tire, shape);
+
+tire.prototype.populate = function(recipient, points_transform) {
+	
+	var center_vertex = vec3(0, 0, 0);
+	recipient.vertices.push(center_vertex);
+	recipient.vertices.push(vec3(0, 0, 1));
+	recipient.texture_coords.push(vec2(0,0)); // don't know what this means
+	recipient.indices.push(0);
+
+	var num_points = 100;
+	var period = 2*Math.PI/num_points;
+	var radius = 2;
+
+	for (var i=0; i<num_points; i++) {
+		recipient.vertices.push(vec3(radius*Math.cos(period*i), radius*Math.sin(period*i)));
+		recipient.normals.push(vec3(0, 0, 1));
+		recipient.texture_coords.push(vec2(0,0));
+		recipient.indices.push((i%2)+1);
+	}
+	
+	
+}*/

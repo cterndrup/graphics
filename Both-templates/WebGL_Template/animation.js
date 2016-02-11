@@ -92,141 +92,112 @@ function update_camera( self, animation_delta_time )
 	}
 
 // *******************************************************
-// drawLeg(): draw a leg of the bee
-Animation.prototype.drawLeg = function(m_transform, material, material2, clockwise, time) {
-	var model_transform = m_transform;
-	var stack = [];
-	var spin = clockwise ? -1 : 1;
-	var rot_x = (time/40) % 120;
-	if (rot_x > 60) rot_x = 120 - rot_x;
+// drawCourt(): draw the basketball court
+Animation.prototype.drawCourt = function(transform, floor, roof, siding, board1, rim, supports) {
 
-	// upper half of leg
-	// upper leg animation
-	// translate, rotate, translate back
-	model_transform = mult(model_transform, translate(0, 0.5, 0.125*spin));
-	model_transform = mult(model_transform, rotate(rot_x, spin, 0, 0));	
-	model_transform = mult(model_transform, translate(0, -0.5, -0.125*spin));
+	var orig_transform = transform;
+	var length = 600;
+	var width = 200;
+	var height = 100;
 
-	// scale
-	stack.push(model_transform);
-	model_transform = mult(model_transform, scale(0.25, 1, 0.25));
+	// draw the roof and floor of the stadium identically
+	transform = mult(transform, translate(0, -height/4, 0));
+	transform = mult(transform, scale(length/2, 1, width/2));
+	this.m_cube.draw(this.graphicsState, transform, floor);
+	transform = orig_transform;
+	transform = mult(transform, translate(0, height/4, 0));
+	transform = mult(transform, scale(length/2, 1, width/2));
+	//this.m_cube.draw(this.graphicsState, transform, roof); // ultimately replace with custom roof shape
+	// leave top off for view
+
+	// draw the siding identically
+	// siding may currently be overlapping roof and floor
+	transform = orig_transform;
+	transform = mult(transform, translate(0, 0, width/4));
+	transform = mult(transform, scale(length/2, height/2, 1));
+	this.m_cube.draw(this.graphicsState, transform, siding);
+	transform = orig_transform;
+	transform = mult(transform, translate(0, 0, -width/4));
+	transform = mult(transform, scale(length/2, height/2, 1));
+	this.m_cube.draw(this.graphicsState, transform, siding);
+
+	// draw the ends
+	transform = orig_transform;
+	transform = mult(transform, translate(-length/4, 0, 0));
+	transform = mult(transform, scale(1, height/2, width/2));
+	this.m_cube.draw(this.graphicsState, transform, siding);
+	transform = orig_transform;
+	transform = mult(transform, translate(length/4, 0, 0));
+	transform = mult(transform, scale(1, height/2, width/2));
+	this.m_cube.draw(this.graphicsState, transform, siding);
+
+	// draw the basketball hoops, one at each end of the court
+	transform = orig_transform;
+	transform = mult(transform, translate(length/4-3, 0, 0));
+	this.drawHoop(transform, length, board1, rim, supports);
+	transform = orig_transform;
+	transform = mult(transform, translate(-length/4+3, 0, 0));
+	transform = mult(transform, scale(-1, 1, 1));
+	this.drawHoop(transform, length, board1, rim, supports);
 	
-	this.m_cube.draw(this.graphicsState, model_transform, material);
 
-	model_transform = stack.pop();
-	model_transform = mult(model_transform, translate(0, -1, 0));	
-
-	// lower half of leg
-	// lower leg animation
-	// translate, rotate, translate back
-	model_transform = mult(model_transform, translate(0, 0.5, 0.125*spin));
-	model_transform = mult(model_transform, rotate(1.25*rot_x, -spin, 0, 0));
-	model_transform = mult(model_transform, translate(0, -0.5, -0.125*spin));
-
-	// scale	
-	model_transform = mult(model_transform, scale(0.25, 1, 0.25));
-
-	this.m_cube.draw(this.graphicsState, model_transform, material2);
 }
+// *******************************************************
+// drawHoop(): draw basketball hoop
+Animation.prototype.drawHoop = function(transform, length, board1, rim, supports) {
+
+	var orig_transform = transform;
+
+	var support_length = length/100;
+	var board_AR = 1.714;
+	var board_width = 20;
+	var board_height = board_width/board_AR;
+	//var support_width = 1;
+	//var support_height = 1;
+
+	// draw four horizontal supports for backboard
+	transform = mult(transform, translate(0, -board_height/4, -board_width/4));
+	transform = mult(transform, scale(support_length, 1/2, 1));
+	this.m_cube.draw(this.graphicsState, transform, supports);
+	transform = orig_transform;
+	transform = mult(transform, translate(0, board_height/4, -board_width/4));
+	transform = mult(transform, scale(support_length, 1/2, 1));
+	this.m_cube.draw(this.graphicsState, transform, supports);
+	transform = orig_transform;
+	transform = mult(transform, translate(0, -board_height/4, board_width/4));
+	transform = mult(transform, scale(support_length, 1/2, 1));
+	this.m_cube.draw(this.graphicsState, transform, supports);
+	transform = orig_transform;
+	transform = mult(transform, translate(0, board_height/4, board_width/4));
+	transform = mult(transform, scale(support_length, 1/2, 1));
+	this.m_cube.draw(this.graphicsState, transform, supports);
+
+	// draw backboard
+	transform = orig_transform;
+	transform = mult(transform, translate(-support_length/2, 0, 0));
+	transform = mult(transform, scale(1, board_height/2, board_width/2));
+	this.m_cube.draw(this.graphicsState, transform, board1);
+
+	// draw backiron
+	transform = orig_transform;
+	transform = mult(transform, translate(-support_length/2-1/2, -2, 0));
+	transform = mult(transform, scale(2, 1/2, 2));
+	this.m_cube.draw(this.graphicsState, transform, rim);
+
+	// draw rim
+	// going to need a new shape for this
+	//this.m_ring.draw(this.graphicsState, transform, rim);
+
+}
+// *******************************************************
+// drawBall(): draw the basketball
+Animation.prototype.drawBall = function(transform, material) {
+	this.m_sphere.draw(this.graphicsState, transform, material);
+}
+// *******************************************************
+// drawPlayer(): draw the basketball player
 
 // *******************************************************
-// drawTree(): draws the tree in the bee's world
-Animation.prototype.drawTree = function(m_transform, trunk, foliage, time) {
-	var model_transform = m_transform;
-	var rot_z = (time/400) % 20;
-	var stack = [];
-
-	if (rot_z > 5 && rot_z < 10) rot_z = 10 - rot_z;
-	else if (rot_z > 10 && rot_z < 15) rot_z = 10 - rot_z;
-	else if (rot_z > 15) rot_z = rot_z - 20;
-
-	// translate down to the ground
-	model_transform = mult(model_transform, translate(0, -6, 0));	
-
-	// draw tree trunk
-	for (var i=0; i<8; i++) {
-		//this.m_cube.draw(this.graphicsState, model_transform, trunk);
-		// rotation about middle of bottom face
-		if (i != 0) {
-			model_transform = mult(model_transform, translate(0, -1, 0));
-			model_transform = mult(model_transform, rotate(rot_z, 0, 0, 1));
-			model_transform = mult(model_transform, translate(0, 1, 0));
-		}
-		model_transform = mult(model_transform, scale(0.5, 2, 0.5));
-		this.m_cube.draw(this.graphicsState, model_transform, trunk);
-		model_transform = mult(model_transform, scale(2, 1/2, 2));
-		model_transform = mult(model_transform, translate(0, 2, 0));
-	}
-	model_transform = mult(model_transform, translate(0, 2, 0));
-
-	// draw foliage
-	model_transform = mult(model_transform, scale(3, 3, 3));
-	this.m_sphere.draw(this.graphicsState, model_transform, foliage);
-}
-
-// *******************************************************
-// drawBody(): draw the bee's body
-Animation.prototype.drawBody = function(m_transform, material) {
-	var model_transform = m_transform;
-
-	model_transform = mult(model_transform, scale(2, 1, 1));
-	model_transform = mult(model_transform, translate(1, 0, 0));
-	this.m_cube.draw(this.graphicsState, model_transform, material);
-}
-
-// *******************************************************
-// drawSting(): draw the bee's sting
-Animation.prototype.drawSting = function(m_transform, material) {
-	var model_transform = m_transform;
-
-	model_transform = mult(model_transform, scale(3, 1, 1));
-	model_transform = mult(model_transform, translate(2, 0, 0));
-	this.m_sphere.draw(this.graphicsState, model_transform, material);
-}
-
-// *******************************************************
-// drawWings(): draw the bee's wings
-Animation.prototype.drawWings = function(m_transform, material, time) {
-	var model_transform = m_transform;
-	var original_model = m_transform;	
-
-        // bee wing flapping
-	var rot_x = (time/20) % 180;
-	if (rot_x > 45 && rot_x < 90) rot_x = 90 - rot_x;
-	else if (rot_x > 90 && rot_x < 135) rot_x = 90 - rot_x;
-	else if (rot_x > 135) rot_x = rot_x - 180;
-	model_transform = mult(model_transform, translate(2, 0.5, 0.5));
-	model_transform = mult(model_transform, rotate(rot_x, 1, 0, 0));
-	model_transform = mult(model_transform, translate(-2, -0.5, -0.5));
-		
-	// draw bee's wings
-	model_transform = mult(model_transform, scale(1, 0.25, 4));
-	model_transform = mult(model_transform, translate(2, 2.5, 0.625));
-	this.m_cube.draw(this.graphicsState, model_transform, material);
-
-	model_transform = original_model;
-
-	model_transform = mult(model_transform, translate(2, 0.5, -0.5));
-	model_transform = mult(model_transform, rotate(-rot_x, 1, 0, 0));
-	model_transform = mult(model_transform, translate(-2, -0.5, 0.5));
-
-	model_transform = mult(model_transform, scale(1, 0.25, 4));
-	model_transform = mult(model_transform, translate(2, 2.5, -0.625));
-	this.m_cube.draw(this.graphicsState, model_transform, material);
-}
-
-// *******************************************************
-// drawGround(): draw the ground of the scene
-Animation.prototype.drawGround = function(m_transform, material) {
-	var model_transform = m_transform;	
-
-	model_transform = mult(model_transform, translate(0, -8, 0));
-	model_transform = mult(model_transform, scale(canvas.width, 2, 100));
-	this.m_cube.draw(this.graphicsState, model_transform, material);
-}
-
-// *******************************************************
-
 // display(): called once per frame, whenever OpenGL decides it's time to redraw.
 
 Animation.prototype.display = function(time)
@@ -241,6 +212,7 @@ Animation.prototype.display = function(time)
 		this.basis_id = 0;
 		
 		var model_transform = mat4();
+		var camera_transform = mat4();
 		
 		var purplePlastic = new Material( vec4( .9,.5,.9,1 ), 1, 1, 1, 40 ), // Omit the string parameter if you want no texture
 			greyPlastic = new Material( vec4( .5,.5,.5,1 ), 1, 1, .5, 20 ),
@@ -253,68 +225,25 @@ Animation.prototype.display = function(time)
 		var brown    = new Material( vec4(0.290, 0.157, 0, 1), 1, 1, 1, 40);
 		var gold     = new Material( vec4(1, 1, 0, 1), 1, 1, 1, 40);
 		var grayish  = new Material( vec4(0.4, 0.4, 0.6, 1), 1, 1, 1, 40);
+
+		var floor      = new Material( vec4(.5, .5, .5, 1), 1, 1, 1, 40, "court.jpg");
+		var basketball = new Material( vec4(.5, .5, .5, 1), 1, 1, 1, 40, "basketball.png");
+		var backboard  = new Material( vec4(.5, .5, .5, 1), 1, 1, 1, 40, "backboard.jpg"); // texture placement is off center -- fix later
+		var rim        = new Material( vec4(218/255, 98/255, 0, 1), 1, 1, 1, 40); 
+		var UCLA       = new Material( vec4(.5, .5, .5, 1), 1, 1, 1, 40, "UCLA_Bruins.jpg");
 			
 		/**********************************
 		Start coding here!!!!
 		**********************************/
-
-		var stack = [];
-		var animation_time = this.graphicsState.animation_time;
-
-		// draw ground
-		stack.push(model_transform);
-		this.drawGround(model_transform, grass);
-		model_transform = stack.pop();
-	
-		// draw tree
-		// move tree along x-axis to desired position
-		stack.push(model_transform);
-		this.drawTree(model_transform, brown, blue, animation_time);
-
-		// bee rotation and translation
-		model_transform = stack.pop();
-		var x_movement = 16*Math.sin(-2*Math.PI*animation_time/8000);
-		var y_movement = 4*Math.sin(2*Math.PI*animation_time/4000);
-		var z_movement = 16*Math.cos(2*Math.PI*animation_time/8000);
-		model_transform = mult(model_transform, translate(x_movement, y_movement, z_movement));
-		model_transform = mult(model_transform, rotate((-360*animation_time/8000), 0, 1, 0));
 		
-		// draw bee head
-		this.m_sphere.draw(this.graphicsState, model_transform, grayish);
+		//model_transform = mult(model_transform, rotate(90, 0, 1, 0));
+		var eye = vec3(0, 200, -100); 
+		var at = vec3(0, 0, 0);
+		var up = vec3(0, 0, 1);
+		camera_transform = lookAt(eye, at, up);
+		this.drawCourt(camera_transform, floor, blue, UCLA, backboard, rim, grayish);
+		this.drawBall(camera_transform, basketball);
 		
-		// draw bee body
-		stack.push(model_transform);
-		this.drawBody(model_transform, gold);
-		model_transform = stack.pop();
-
-		// draw bee sting
-		stack.push(model_transform);
-		this.drawSting(model_transform, grayish);
-		model_transform = stack.pop();
-
-		// draw bee's wings
-		stack.push(model_transform);
-		this.drawWings(model_transform, grayish, animation_time);
-		model_transform = stack.pop();
-
-		// draw bee's legs
-		stack.push(model_transform);
-		model_transform = mult(model_transform, translate(1, -1, 0.625));
-
-		for (var i=0; i<3; i++) {
-			model_transform = mult(model_transform, translate(0.5, 0, 0));
-			this.drawLeg(model_transform, grayish, gold, true, animation_time);
-		}
-	
-		model_transform = stack.pop();
-		stack.push(model_transform);
-		model_transform = mult(model_transform, translate(1, -1, -0.625));
-		
-		for (var i=0; i<3; i++) {
-			model_transform = mult(model_transform, translate(0.5, 0, 0));
-			this.drawLeg(model_transform, grayish, gold, false, animation_time);
-		}
-
 
 		/*model_transform = mult( model_transform, translate( 0, 10, -15) );		// Position the next shape by post-multiplying another matrix onto the current matrix product
 		this.m_cube.draw( this.graphicsState, model_transform, purplePlastic );			// Draw a cube, passing in the current matrices
