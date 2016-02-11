@@ -93,7 +93,7 @@ function update_camera( self, animation_delta_time )
 
 // *******************************************************
 // drawCourt(): draw the basketball court
-Animation.prototype.drawCourt = function(transform, floor, roof, siding) {
+Animation.prototype.drawCourt = function(transform, floor, roof, siding, board1, rim, supports) {
 
 	var orig_transform = transform;
 	var length = 600;
@@ -132,13 +132,20 @@ Animation.prototype.drawCourt = function(transform, floor, roof, siding) {
 	this.m_cube.draw(this.graphicsState, transform, siding);
 
 	// draw the basketball hoops, one at each end of the court
+	transform = orig_transform;
+	transform = mult(transform, translate(length/4-3, 0, 0));
+	this.drawHoop(transform, length, board1, rim, supports);
+	transform = orig_transform;
+	transform = mult(transform, translate(-length/4+3, 0, 0));
+	transform = mult(transform, scale(-1, 1, 1));
+	this.drawHoop(transform, length, board1, rim, supports);
 	
 
 }
 // *******************************************************
 // drawHoop(): draw basketball hoop
-Animation.prototype.drawHoop = function(transform, length, board1, board2, rim, supports) {
-	
+Animation.prototype.drawHoop = function(transform, length, board1, rim, supports) {
+
 	var orig_transform = transform;
 
 	var support_length = length/100;
@@ -150,29 +157,30 @@ Animation.prototype.drawHoop = function(transform, length, board1, board2, rim, 
 
 	// draw four horizontal supports for backboard
 	transform = mult(transform, translate(0, -board_height/4, -board_width/4));
-	transform = mult(transform, scale(support_length, 1, 1));
+	transform = mult(transform, scale(support_length, 1/2, 1));
 	this.m_cube.draw(this.graphicsState, transform, supports);
 	transform = orig_transform;
 	transform = mult(transform, translate(0, board_height/4, -board_width/4));
-	transform = mult(transform, scale(support_length, 1, 1));
+	transform = mult(transform, scale(support_length, 1/2, 1));
 	this.m_cube.draw(this.graphicsState, transform, supports);
-	transform = orig_transform;	
+	transform = orig_transform;
 	transform = mult(transform, translate(0, -board_height/4, board_width/4));
-	transform = mult(transform, scale(support_length, 1, 1));
+	transform = mult(transform, scale(support_length, 1/2, 1));
 	this.m_cube.draw(this.graphicsState, transform, supports);
 	transform = orig_transform;
 	transform = mult(transform, translate(0, board_height/4, board_width/4));
-	transform = mult(transform, scale(support_length, 1, 1));
+	transform = mult(transform, scale(support_length, 1/2, 1));
 	this.m_cube.draw(this.graphicsState, transform, supports);
 
 	// draw backboard
 	transform = orig_transform;
-	transform = mult(transform, rotate(90, 0, 1, 0));
-	transform = mult(transform, scale(board_width/2, board_height/2, 1));
+	transform = mult(transform, translate(-support_length/2, 0, 0));
+	transform = mult(transform, scale(1, board_height/2, board_width/2));
 	this.m_cube.draw(this.graphicsState, transform, board1);
 
 	// draw backiron
 	transform = orig_transform;
+	transform = mult(transform, translate(-support_length/2-1/2, -2, 0));
 	transform = mult(transform, scale(2, 1/2, 2));
 	this.m_cube.draw(this.graphicsState, transform, rim);
 
@@ -182,7 +190,14 @@ Animation.prototype.drawHoop = function(transform, length, board1, board2, rim, 
 
 }
 // *******************************************************
+// drawBall(): draw the basketball
+Animation.prototype.drawBall = function(transform, material) {
+	this.m_sphere.draw(this.graphicsState, transform, material);
+}
+// *******************************************************
+// drawPlayer(): draw the basketball player
 
+// *******************************************************
 // display(): called once per frame, whenever OpenGL decides it's time to redraw.
 
 Animation.prototype.display = function(time)
@@ -197,6 +212,7 @@ Animation.prototype.display = function(time)
 		this.basis_id = 0;
 		
 		var model_transform = mat4();
+		var camera_transform = mat4();
 		
 		var purplePlastic = new Material( vec4( .9,.5,.9,1 ), 1, 1, 1, 40 ), // Omit the string parameter if you want no texture
 			greyPlastic = new Material( vec4( .5,.5,.5,1 ), 1, 1, .5, 20 ),
@@ -209,15 +225,25 @@ Animation.prototype.display = function(time)
 		var brown    = new Material( vec4(0.290, 0.157, 0, 1), 1, 1, 1, 40);
 		var gold     = new Material( vec4(1, 1, 0, 1), 1, 1, 1, 40);
 		var grayish  = new Material( vec4(0.4, 0.4, 0.6, 1), 1, 1, 1, 40);
+
+		var floor      = new Material( vec4(.5, .5, .5, 1), 1, 1, 1, 40, "court.jpg");
+		var basketball = new Material( vec4(.5, .5, .5, 1), 1, 1, 1, 40, "basketball.png");
+		var backboard  = new Material( vec4(.5, .5, .5, 1), 1, 1, 1, 40, "backboard.jpg"); // texture placement is off center -- fix later
+		var rim        = new Material( vec4(218/255, 98/255, 0, 1), 1, 1, 1, 40); 
+		var UCLA       = new Material( vec4(.5, .5, .5, 1), 1, 1, 1, 40, "UCLA_Bruins.jpg");
 			
 		/**********************************
 		Start coding here!!!!
 		**********************************/
 		
-		model_transform = mult(model_transform, rotate(90, 0, 1, 0));
-		this.drawCourt(model_transform, grass, blue, blue);
-		this.drawHoop(model_transform, 200, grass, blue, gold, grayish);
-
+		//model_transform = mult(model_transform, rotate(90, 0, 1, 0));
+		var eye = vec3(0, 200, -100); 
+		var at = vec3(0, 0, 0);
+		var up = vec3(0, 0, 1);
+		camera_transform = lookAt(eye, at, up);
+		this.drawCourt(camera_transform, floor, blue, UCLA, backboard, rim, grayish);
+		this.drawBall(camera_transform, basketball);
+		
 
 		/*model_transform = mult( model_transform, translate( 0, 10, -15) );		// Position the next shape by post-multiplying another matrix onto the current matrix product
 		this.m_cube.draw( this.graphicsState, model_transform, purplePlastic );			// Draw a cube, passing in the current matrices
