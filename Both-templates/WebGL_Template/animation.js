@@ -33,6 +33,7 @@ function Animation()
 		self.m_fan = new triangle_fan_full( 10, mat4() );
 		self.m_strip = new rectangular_strip( 1, mat4() );
 		self.m_cylinder = new cylindrical_strip( 10, mat4() );
+		self.m_ramp = new ramp(mat4());
 		
 		// 1st parameter is camera matrix.  2nd parameter is the projection:  The matrix that determines how depth is treated.  It projects 3D points onto a plane.
 		self.graphicsState = new GraphicsState( translate(0, 0,-40), perspective(45, canvas.width/canvas.height, .1, 1000), 0 );
@@ -235,14 +236,16 @@ Animation.prototype.display = function(time)
 		/**********************************
 		Start coding here!!!!
 		**********************************/
-		
+		model_transform = mult(model_transform, rotate(this.graphicsState.animation_time/100, 0, 1, 0));
+		this.m_ramp.draw(this.graphicsState, model_transform, earth);
+
 		//model_transform = mult(model_transform, rotate(90, 0, 1, 0));
-		var eye = vec3(0, 200, -100); 
+		/*var eye = vec3(0, 200, -100); 
 		var at = vec3(0, 0, 0);
 		var up = vec3(0, 0, 1);
 		camera_transform = lookAt(eye, at, up);
 		this.drawCourt(camera_transform, floor, blue, UCLA, backboard, rim, grayish);
-		this.drawBall(camera_transform, basketball);
+		this.drawBall(camera_transform, basketball);*/
 		
 
 		/*model_transform = mult( model_transform, translate( 0, 10, -15) );		// Position the next shape by post-multiplying another matrix onto the current matrix product

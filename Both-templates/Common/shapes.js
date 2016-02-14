@@ -590,33 +590,64 @@ triangle.prototype.populate = function(recipient, points_transform) {
 
 };
 
-/*
-function tire(points_transform) {
+function ramp(points_transform) {
 	shape.call(this);
 	//if (!arguments.length) return;
 	this.populate(this, points_transform);
 	this.init_buffers();
 }
-inherit(tire, shape);
+inherit(ramp, shape);
 
-tire.prototype.populate = function(recipient, points_transform) {
-	
-	var center_vertex = vec3(0, 0, 0);
-	recipient.vertices.push(center_vertex);
-	recipient.vertices.push(vec3(0, 0, 1));
-	recipient.texture_coords.push(vec2(0,0)); // don't know what this means
-	recipient.indices.push(0);
+ramp.prototype.populate = function(recipient, points_transform) {
+	// setup recipient arrays
+	recipient.vertices = [];
+	recipient.normals  = [];
+	recipient.texture_coords = [];
+	recipient.indices  = [];
 
-	var num_points = 100;
-	var period = 2*Math.PI/num_points;
-	var radius = 2;
+	// draw back square
+	recipient.vertices.push(vec3(-0.5, -0.5, 0.5));
+	recipient.normals.push(vec3(0, 0, 1));
+	recipient.texture_coords.push(vec2(0,0));
 
-	for (var i=0; i<num_points; i++) {
-		recipient.vertices.push(vec3(radius*Math.cos(period*i), radius*Math.sin(period*i)));
-		recipient.normals.push(vec3(0, 0, 1));
-		recipient.texture_coords.push(vec2(0,0));
-		recipient.indices.push((i%2)+1);
-	}
+	recipient.vertices.push(vec3(-0.5, 0.5, 0.5));
+	recipient.normals.push(vec3(0, 0, 1));
+	recipient.texture_coords.push(vec2(0,1));
+
+	recipient.vertices.push(vec3(-0.5, 0.5, -0.5));
+	recipient.normals.push(vec3(0, 0, -1));
+	recipient.texture_coords.push(vec2(0,1));
+
+	recipient.vertices.push(vec3(-0.5, -0.5, -0.5));
+	recipient.normals.push(vec3(0, 0, -1));
+	recipient.texture_coords.push(vec2(0,0));
+
+	recipient.indices.push(0, 1, 2, 2, 3, 0);
+
+	// draw side triangles
+	recipient.vertices.push(vec3(0.5, -0.5, -0.5));
+	recipient.normals.push(vec3(0, 0, -1));
+	recipient.texture_coords.push(vec2(0,0));
 	
-	
+	recipient.vertices.push(vec3(0.5, -0.5, 0.5));
+	recipient.normals.push(vec3(0, 0, 1));
+	recipient.texture_coords.push(vec2(0,0));
+
+	recipient.indices.push(0, 1, 5, 3, 2, 4, 1, 2, 5, 2, 4, 5);
+
+}
+
+/*function square(points_transform) {
+	shape.call(this);
+	if (!arguments.length) return;
+	this.populate(this, points_transform);
+	this.init_buffers();
+}
+inherit(square, shape);
+
+square.prototype.populate = function(recipient, points_transform) {
+	recipient.vertices = [vec3(-1, -1, 0), vec3(1, -1, 0), vec3(-1, 1, 0), vec3(1, 1, 0)];
+	recipient.normals  = [vec3(1, 0, 0), vec3(1, 0, 0), vec3(1, 0, 0), vec3(1, 0, 0)];
+	recipient.texture_coords = [vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)];
+	recipient.indices  = [0, 1, 2, 1, 3, 2];
 }*/
