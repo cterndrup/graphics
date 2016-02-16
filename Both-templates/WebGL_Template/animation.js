@@ -197,7 +197,58 @@ Animation.prototype.drawBall = function(transform, material) {
 }
 // *******************************************************
 // drawPlayer(): draw the basketball player
+Animation.prototype.drawPlayer = function(transform, shoes, skin, uniform) {
+	var orig_transform = transform;
 
+	// draw torso
+	transform = mult(transform, scale(1, 2, 2));
+	this.m_cube.draw(this.graphicsState, transform, uniform);
+	transform = orig_transform;
+	transform = mult(transform, translate(0, 2, 0));
+	transform = mult(transform, scale(1, 4, 2.5));
+	this.m_cube.draw(this.graphicsState, transform, uniform);
+	transform = orig_transform;
+	transform = mult(transform, translate(0, 4.125, 0));
+	transform = mult(transform, scale(1, 1/4, 1));
+	this.m_cube.draw(this.graphicsState, transform, skin);
+
+	// draw head
+	transform = orig_transform;
+	transform = mult(transform, translate(0, 5.25, 0));
+	this.m_sphere.draw(this.graphicsState, transform, skin);
+
+	// draw legs & shoes
+	var shift = 1;
+	for (var i=0; i<2; i++) {
+		if (shift) shift *= -1;
+		transform = orig_transform;
+		transform = mult(transform, translate(0,-2,shift*0.5));
+		transform = mult(transform, scale(1/4, 1, 1/6));
+		this.m_sphere.draw(this.graphicsState, transform, skin);
+		transform = mult(transform, translate(0,-2,shift*0.125));
+		this.m_sphere.draw(this.graphicsState, transform, skin);
+		transform = mult(transform, translate(0,-1.25,shift*0.125));
+		transform = mult(transform, scale(2, 1/2, 2));
+		this.m_cube.draw(this.graphicsState, transform, shoes);
+		transform = mult(transform, translate(1, 0, shift*0.125));
+		this.m_ramp.draw(this.graphicsState, transform, shoes);
+	}
+
+	// draw arms
+	var shift = 1;
+	for (var i=0; i<2; i++) {
+		if (shift) shift *= -1;
+		transform = orig_transform;
+		transform = mult(transform, translate(0, 3, 2.125*shift));
+		transform = mult(transform, scale(1/4, 1/6, 1));
+		this.m_sphere.draw(this.graphicsState, transform, skin);
+		transform = mult(transform, translate(0, 0, 1.5*shift));
+		transform = mult(transform, scale(1, 1, 1.5));
+		this.m_sphere.draw(this.graphicsState, transform, skin);
+	}
+	
+	
+}
 // *******************************************************
 // display(): called once per frame, whenever OpenGL decides it's time to redraw.
 
@@ -232,20 +283,26 @@ Animation.prototype.display = function(time)
 		var backboard  = new Material( vec4(.5, .5, .5, 1), 1, 1, 1, 40, "backboard.jpg"); // texture placement is off center -- fix later
 		var rim        = new Material( vec4(218/255, 98/255, 0, 1), 1, 1, 1, 40); 
 		var UCLA       = new Material( vec4(.5, .5, .5, 1), 1, 1, 1, 40, "UCLA_Bruins.jpg");
+		var skin       = new Material( vec4(180/255, 128/255, 89/255, 1), 1, 1, 1, 40);
+		var white      = new Material( vec4(255, 255, 255, 1), 1, 1, 1, 40);
+		var bruin_blue = new Material( vec4(58/255, 131/255, 196/255), 1, 1, 1, 40);
 			
 		/**********************************
 		Start coding here!!!!
 		**********************************/
-		model_transform = mult(model_transform, rotate(this.graphicsState.animation_time/100, 0, 1, 0));
-		this.m_ramp.draw(this.graphicsState, model_transform, earth);
+		//model_transform = mult(model_transform, rotate(this.graphicsState.animation_time/100, 0, 1, 0));
+		//this.m_ramp.draw(this.graphicsState, model_transform, earth);
 
-		//model_transform = mult(model_transform, rotate(90, 0, 1, 0));
-		/*var eye = vec3(0, 200, -100); 
+		//model_transform = mult(model_transform, rotate(-90, 0, 1, 0));
+		var eye = vec3(0, 200, -100); 
 		var at = vec3(0, 0, 0);
 		var up = vec3(0, 0, 1);
 		camera_transform = lookAt(eye, at, up);
 		this.drawCourt(camera_transform, floor, blue, UCLA, backboard, rim, grayish);
-		this.drawBall(camera_transform, basketball);*/
+		camera_transform = mult(camera_transform, translate(0, -19, 0));
+		this.drawPlayer(camera_transform, gold, skin, bruin_blue);
+		camera_transform = mult(camera_transform, translate(0, 2, -5));
+		this.drawBall(camera_transform, basketball);
 		
 
 		/*model_transform = mult( model_transform, translate( 0, 10, -15) );		// Position the next shape by post-multiplying another matrix onto the current matrix product
