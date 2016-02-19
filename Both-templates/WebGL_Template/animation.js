@@ -34,6 +34,7 @@ function Animation()
 		self.m_strip = new rectangular_strip( 1, mat4() );
 		self.m_cylinder = new cylindrical_strip( 10, mat4() );
 		self.m_ramp = new ramp(mat4());
+		self.m_ring = new ring(mat4());
 		
 		// 1st parameter is camera matrix.  2nd parameter is the projection:  The matrix that determines how depth is treated.  It projects 3D points onto a plane.
 		self.graphicsState = new GraphicsState( translate(0, 0,-40), perspective(45, canvas.width/canvas.height, .1, 1000), 0 );
@@ -94,157 +95,188 @@ function update_camera( self, animation_delta_time )
 
 // *******************************************************
 // drawCourt(): draw the basketball court
-Animation.prototype.drawCourt = function(transform, floor, roof, siding, board1, rim, supports) {
+Animation.prototype.drawCourt = function(c_transform, m_transform, floor, roof, siding, board1, rim, supports) {
 
-	var orig_transform = transform;
+	var model_transform = m_transform;
+	var combined_transform = mat4();
 	var length = 600;
 	var width = 200;
 	var height = 100;
 
 	// draw the roof and floor of the stadium identically
-	transform = mult(transform, translate(0, -height/4, 0));
-	transform = mult(transform, scale(length/2, 1, width/2));
-	this.m_cube.draw(this.graphicsState, transform, floor);
-	transform = orig_transform;
-	transform = mult(transform, translate(0, height/4, 0));
-	transform = mult(transform, scale(length/2, 1, width/2));
+	m_transform = mult(m_transform, translate(0, -height/4, 0));
+	m_transform = mult(m_transform, scale(length/2, 1, width/2));
+	combined_transform = mult(c_transform, m_transform);
+	this.m_cube.draw(this.graphicsState, combined_transform, floor);
+	m_transform = model_transform;
+	m_transform = mult(m_transform, translate(0, height/4, 0));
+	m_transform = mult(m_transform, scale(length/2, 1, width/2));
 	//this.m_cube.draw(this.graphicsState, transform, roof); // ultimately replace with custom roof shape
 	// leave top off for view
 
 	// draw the siding identically
 	// siding may currently be overlapping roof and floor
-	transform = orig_transform;
-	transform = mult(transform, translate(0, 0, width/4));
-	transform = mult(transform, scale(length/2, height/2, 1));
-	this.m_cube.draw(this.graphicsState, transform, siding);
-	transform = orig_transform;
-	transform = mult(transform, translate(0, 0, -width/4));
-	transform = mult(transform, scale(length/2, height/2, 1));
-	this.m_cube.draw(this.graphicsState, transform, siding);
+	m_transform = model_transform;
+	m_transform = mult(m_transform, translate(0, 0, width/4));
+	m_transform = mult(m_transform, scale(length/2, height/2, 1));
+	combined_transform = mult(c_transform, m_transform);
+	this.m_cube.draw(this.graphicsState, combined_transform, siding);
+	m_transform = model_transform;
+	m_transform = mult(m_transform, translate(0, 0, -width/4));
+	m_transform = mult(m_transform, scale(length/2, height/2, 1));
+	combined_transform = mult(c_transform, m_transform);
+	this.m_cube.draw(this.graphicsState, combined_transform, siding);
 
 	// draw the ends
-	transform = orig_transform;
-	transform = mult(transform, translate(-length/4, 0, 0));
-	transform = mult(transform, scale(1, height/2, width/2));
-	this.m_cube.draw(this.graphicsState, transform, siding);
-	transform = orig_transform;
-	transform = mult(transform, translate(length/4, 0, 0));
-	transform = mult(transform, scale(1, height/2, width/2));
-	this.m_cube.draw(this.graphicsState, transform, siding);
+	m_transform = model_transform;
+	m_transform = mult(m_transform, translate(-length/4, 0, 0));
+	m_transform = mult(m_transform, scale(1, height/2, width/2));
+	combined_transform = mult(c_transform, m_transform);
+	this.m_cube.draw(this.graphicsState, combined_transform, siding);
+	m_transform = model_transform;
+	m_transform = mult(m_transform, translate(length/4, 0, 0));
+	m_transform = mult(m_transform, scale(1, height/2, width/2));
+	combined_transform = mult(c_transform, m_transform);
+	this.m_cube.draw(this.graphicsState, combined_transform, siding);
 
 	// draw the basketball hoops, one at each end of the court
-	transform = orig_transform;
-	transform = mult(transform, translate(length/4-3, 0, 0));
-	this.drawHoop(transform, length, board1, rim, supports);
-	transform = orig_transform;
-	transform = mult(transform, translate(-length/4+3, 0, 0));
-	transform = mult(transform, scale(-1, 1, 1));
-	this.drawHoop(transform, length, board1, rim, supports);
+	m_transform = model_transform;
+	m_transform = mult(m_transform, translate(length/4-3, 0, 0));
+	this.drawHoop(c_transform, m_transform, length, board1, rim, supports);
+	m_transform = model_transform;
+	m_transform = mult(m_transform, translate(-length/4+3, 0, 0));
+	m_transform = mult(m_transform, scale(-1, 1, 1));
+	this.drawHoop(c_transform, m_transform, length, board1, rim, supports);
 	
 
 }
 // *******************************************************
 // drawHoop(): draw basketball hoop
-Animation.prototype.drawHoop = function(transform, length, board1, rim, supports) {
+Animation.prototype.drawHoop = function(c_transform, m_transform, length, board1, rim, supports) {
 
-	var orig_transform = transform;
+	var model_transform = m_transform;
+	var combined_transform = mat4();
 
 	var support_length = length/100;
 	var board_AR = 1.714;
 	var board_width = 20;
 	var board_height = board_width/board_AR;
-	//var support_width = 1;
-	//var support_height = 1;
 
 	// draw four horizontal supports for backboard
-	transform = mult(transform, translate(0, -board_height/4, -board_width/4));
-	transform = mult(transform, scale(support_length, 1/2, 1));
-	this.m_cube.draw(this.graphicsState, transform, supports);
-	transform = orig_transform;
-	transform = mult(transform, translate(0, board_height/4, -board_width/4));
-	transform = mult(transform, scale(support_length, 1/2, 1));
-	this.m_cube.draw(this.graphicsState, transform, supports);
-	transform = orig_transform;
-	transform = mult(transform, translate(0, -board_height/4, board_width/4));
-	transform = mult(transform, scale(support_length, 1/2, 1));
-	this.m_cube.draw(this.graphicsState, transform, supports);
-	transform = orig_transform;
-	transform = mult(transform, translate(0, board_height/4, board_width/4));
-	transform = mult(transform, scale(support_length, 1/2, 1));
-	this.m_cube.draw(this.graphicsState, transform, supports);
+	m_transform = mult(m_transform, translate(0, -board_height/4, -board_width/4));
+	m_transform = mult(m_transform, scale(support_length, 1/2, 1));
+	combined_transform = mult(c_transform, m_transform);
+	this.m_cube.draw(this.graphicsState, combined_transform, supports);
+	m_transform = model_transform;
+	m_transform = mult(m_transform, translate(0, board_height/4, -board_width/4));
+	m_transform = mult(m_transform, scale(support_length, 1/2, 1));
+	combined_transform = mult(c_transform, m_transform);
+	this.m_cube.draw(this.graphicsState, combined_transform, supports);
+	m_transform = model_transform;
+	m_transform = mult(m_transform, translate(0, -board_height/4, board_width/4));
+	m_transform = mult(m_transform, scale(support_length, 1/2, 1));
+	combined_transform = mult(c_transform, m_transform);
+	this.m_cube.draw(this.graphicsState, combined_transform, supports);
+	m_transform = model_transform;
+	m_transform = mult(m_transform, translate(0, board_height/4, board_width/4));
+	m_transform = mult(m_transform, scale(support_length, 1/2, 1));
+	combined_transform = mult(c_transform, m_transform);
+	this.m_cube.draw(this.graphicsState, combined_transform, supports);
 
 	// draw backboard
-	transform = orig_transform;
-	transform = mult(transform, translate(-support_length/2, 0, 0));
-	transform = mult(transform, scale(1, board_height/2, board_width/2));
-	this.m_cube.draw(this.graphicsState, transform, board1);
+	m_transform = model_transform;
+	m_transform = mult(m_transform, translate(-support_length/2, 0, 0));
+	m_transform = mult(m_transform, scale(1, board_height/2, board_width/2));
+	combined_transform = mult(c_transform, m_transform);
+	this.m_cube.draw(this.graphicsState, combined_transform, board1);
 
 	// draw backiron
-	transform = orig_transform;
-	transform = mult(transform, translate(-support_length/2-1/2, -2, 0));
-	transform = mult(transform, scale(2, 1/2, 2));
-	this.m_cube.draw(this.graphicsState, transform, rim);
+	m_transform = model_transform;
+	m_transform = mult(m_transform, translate(-support_length/2-1/2, -2, 0));
+	m_transform = mult(m_transform, scale(2, 1/2, 2));
+	combined_transform = mult(c_transform, m_transform);
+	this.m_cube.draw(this.graphicsState, combined_transform, rim);
 
 	// draw rim
-	// going to need a new shape for this
-	//this.m_ring.draw(this.graphicsState, transform, rim);
+	m_transform = model_transform;
+	m_transform = mult(m_transform, translate(-6.75, -2, 0))
+	combined_transform = mult(c_transform, m_transform);
+	this.m_ring.draw(this.graphicsState, combined_transform, rim);
 
 }
 // *******************************************************
 // drawBall(): draw the basketball
-Animation.prototype.drawBall = function(transform, material) {
-	this.m_sphere.draw(this.graphicsState, transform, material);
+Animation.prototype.drawBall = function(c_transform, m_transform, material, time) {
+
+	var combined_transform = mat4();
+
+	m_transform = mult(m_transform, translate(time/100, 0, 0));
+	combined_transform = mult(c_transform, m_transform);
+	this.m_sphere.draw(this.graphicsState, combined_transform, material);
 }
 // *******************************************************
 // drawPlayer(): draw the basketball player
-Animation.prototype.drawPlayer = function(transform, shoes, skin, uniform) {
-	var orig_transform = transform;
+Animation.prototype.drawPlayer = function(c_transform, m_transform, shoes, skin, uniform, time) {
+
+	var model_transform = m_transform;
+	var combined_transform = mat4();
 
 	// draw torso
-	transform = mult(transform, scale(1, 2, 2));
-	this.m_cube.draw(this.graphicsState, transform, uniform);
-	transform = orig_transform;
-	transform = mult(transform, translate(0, 2, 0));
-	transform = mult(transform, scale(1, 4, 2.5));
-	this.m_cube.draw(this.graphicsState, transform, uniform);
-	transform = orig_transform;
-	transform = mult(transform, translate(0, 4.125, 0));
-	transform = mult(transform, scale(1, 1/4, 1));
-	this.m_cube.draw(this.graphicsState, transform, skin);
+	m_transform = mult(m_transform, translate(time/100, 0, 0));
+	m_transform = mult(m_transform, scale(1, 2, 2));
+	combined_transform = mult(c_transform, m_transform);	
+	this.m_cube.draw(this.graphicsState, combined_transform, uniform);
+	m_transform = model_transform;
+	m_transform = mult(m_transform, translate(time/100, 2, 0));
+	m_transform = mult(m_transform, scale(1, 4, 2.5));
+	combined_transform = mult(c_transform, m_transform);	
+	this.m_cube.draw(this.graphicsState, combined_transform, uniform);
+	m_transform = model_transform;
+	m_transform = mult(m_transform, translate(time/100, 4.125, 0));
+	m_transform = mult(m_transform, scale(1, 1/4, 1));
+	combined_transform = mult(c_transform, m_transform);	
+	this.m_cube.draw(this.graphicsState, combined_transform, skin);
 
 	// draw head
-	transform = orig_transform;
-	transform = mult(transform, translate(0, 5.25, 0));
-	this.m_sphere.draw(this.graphicsState, transform, skin);
+	m_transform = model_transform;
+	m_transform = mult(m_transform, translate(time/100, 5.25, 0));
+	combined_transform = mult(c_transform, m_transform);	
+	this.m_sphere.draw(this.graphicsState, combined_transform, skin);
 
 	// draw legs & shoes
 	var shift = 1;
 	for (var i=0; i<2; i++) {
 		if (shift) shift *= -1;
-		transform = orig_transform;
-		transform = mult(transform, translate(0,-2,shift*0.5));
-		transform = mult(transform, scale(1/4, 1, 1/6));
-		this.m_sphere.draw(this.graphicsState, transform, skin);
-		transform = mult(transform, translate(0,-2,shift*0.125));
-		this.m_sphere.draw(this.graphicsState, transform, skin);
-		transform = mult(transform, translate(0,-1.25,shift*0.125));
-		transform = mult(transform, scale(2, 1/2, 2));
-		this.m_cube.draw(this.graphicsState, transform, shoes);
-		transform = mult(transform, translate(1, 0, shift*0.125));
-		this.m_ramp.draw(this.graphicsState, transform, shoes);
+		m_transform = model_transform;
+		m_transform = mult(m_transform, translate(time/100,-2,shift*0.5));
+		m_transform = mult(m_transform, scale(1/4, 1, 1/6));
+		combined_transform = mult(c_transform, m_transform);
+		this.m_sphere.draw(this.graphicsState, combined_transform, skin);
+		m_transform = mult(m_transform, translate(0,-2,shift*0.125));
+		combined_transform = mult(c_transform, m_transform);
+		this.m_sphere.draw(this.graphicsState, combined_transform, skin);
+		m_transform = mult(m_transform, translate(0,-1.25,shift*0.125));
+		m_transform = mult(m_transform, scale(2, 1/2, 2));
+		combined_transform = mult(c_transform, m_transform);
+		this.m_cube.draw(this.graphicsState, combined_transform, shoes);
+		m_transform = mult(m_transform, translate(1, 0, shift*0.125));
+		combined_transform = mult(c_transform, m_transform);
+		this.m_ramp.draw(this.graphicsState, combined_transform, shoes);
 	}
 
 	// draw arms
 	var shift = 1;
 	for (var i=0; i<2; i++) {
 		if (shift) shift *= -1;
-		transform = orig_transform;
-		transform = mult(transform, translate(0, 3, 2.125*shift));
-		transform = mult(transform, scale(1/4, 1/6, 1));
-		this.m_sphere.draw(this.graphicsState, transform, skin);
-		transform = mult(transform, translate(0, 0, 1.5*shift));
-		transform = mult(transform, scale(1, 1, 1.5));
-		this.m_sphere.draw(this.graphicsState, transform, skin);
+		m_transform = model_transform;
+		m_transform = mult(m_transform, translate(time/100, 3, 2.125*shift));
+		m_transform = mult(m_transform, scale(1/4, 1/6, 1));
+		combined_transform = mult(c_transform, m_transform);
+		this.m_sphere.draw(this.graphicsState, combined_transform, skin);
+		m_transform = mult(m_transform, translate(0, 0, 1.5*shift));
+		m_transform = mult(m_transform, scale(1, 1, 1.5));
+		combined_transform = mult(c_transform, m_transform);
+		this.m_sphere.draw(this.graphicsState, combined_transform, skin);
 	}
 	
 	
@@ -265,6 +297,7 @@ Animation.prototype.display = function(time)
 		
 		var model_transform = mat4();
 		var camera_transform = mat4();
+		var combined_transform = mat4();
 		
 		var purplePlastic = new Material( vec4( .9,.5,.9,1 ), 1, 1, 1, 40 ), // Omit the string parameter if you want no texture
 			greyPlastic = new Material( vec4( .5,.5,.5,1 ), 1, 1, .5, 20 ),
@@ -290,42 +323,64 @@ Animation.prototype.display = function(time)
 		/**********************************
 		Start coding here!!!!
 		**********************************/
-		//model_transform = mult(model_transform, rotate(this.graphicsState.animation_time/100, 0, 1, 0));
-		//this.m_ramp.draw(this.graphicsState, model_transform, earth);
 
 		//model_transform = mult(model_transform, rotate(-90, 0, 1, 0));
-		var eye = vec3(0, 200, -100); 
-		var at = vec3(0, 0, 0);
-		var up = vec3(0, 0, 1);
-		camera_transform = lookAt(eye, at, up);
-		this.drawCourt(camera_transform, floor, blue, UCLA, backboard, rim, grayish);
-		camera_transform = mult(camera_transform, translate(0, -19, 0));
-		this.drawPlayer(camera_transform, gold, skin, bruin_blue);
-		camera_transform = mult(camera_transform, translate(0, 2, -5));
-		this.drawBall(camera_transform, basketball);
-		
+		var time = this.graphicsState.animation_time;
 
-		/*model_transform = mult( model_transform, translate( 0, 10, -15) );		// Position the next shape by post-multiplying another matrix onto the current matrix product
-		this.m_cube.draw( this.graphicsState, model_transform, purplePlastic );			// Draw a cube, passing in the current matrices
-		CURRENT_BASIS_IS_WORTH_SHOWING(this, model_transform);							// How to draw a set of axes, conditionally displayed - cycle through by pressing p and m
-		
-		model_transform = mult( model_transform, translate( 0, -2, 0 ) );		
-		this.m_fan.draw( this.graphicsState, model_transform, greyPlastic );			// Cone
-		CURRENT_BASIS_IS_WORTH_SHOWING(this, model_transform);
-		
-		model_transform = mult( model_transform, translate( 0, -4, 0 ) );
-		this.m_cylinder.draw( this.graphicsState, model_transform, greyPlastic );		// Tube
-		CURRENT_BASIS_IS_WORTH_SHOWING(this, model_transform);
-		
-		
-		model_transform = mult( model_transform, translate( 0, -3, 0 ) );											// Example Translate
-		model_transform = mult( model_transform, rotate( this.graphicsState.animation_time/20, 0, 1, 0 ) );			// Example Rotate
-		model_transform = mult( model_transform, scale( 5, 1, 5 ) );												// Example Scale
-		this.m_sphere.draw( this.graphicsState, model_transform, earth );				// Sphere
-		
-		model_transform = mult( model_transform, translate( 0, -2, 0 ) );
-		this.m_strip.draw( this.graphicsState, model_transform, stars );				// Rectangle
-		CURRENT_BASIS_IS_WORTH_SHOWING(this, model_transform);*/
+		var eye = vec3();
+		var at  = vec3();
+		var up  = vec3();
+
+		if (time < 2000) {
+			eye = vec3(-50*Math.sin(Math.PI*time/4000), 50, -50*Math.cos(Math.PI*time/4000));
+			at  = vec3(0, 0, 0);
+			up  = vec3(Math.sin(Math.PI*time/4000), 0, Math.cos(Math.PI*time/4000));
+		}
+		else if (time >= 2000 && time < 4000) {
+			eye = vec3(-50, 50, 0);
+			at  = vec3(25*(time-2000)/1000, 15*(time-2000)/1000, 0);
+			up  = vec3(1, 0, 0);
+		}
+		else if (time >= 4000 && time < 5000) {
+			eye = vec3(-50, 50, 0);
+			at  = vec3(50, 30, 0);
+			up  = vec3(1, 0, 0);
+		}
+		else if (time >= 5000 && time < 7000) {
+			eye = vec3(-50+50*(time-5000)/1000, 50, 0);
+			at  = vec3(50+12.5*(time-5000)/1000, 30, 0);
+			up  = vec3(1, 0, 0);
+		}
+		else {
+			eye = vec3(50, 50, 0);
+			at  = vec3(75, 30, 0);
+			up  = vec3(1, 0, 0);
+		}
+		camera_transform = lookAt(eye, at, up);
+
+		this.drawCourt(camera_transform, model_transform, floor, blue, UCLA, backboard, rim, grayish);
+		model_transform = mult(model_transform, translate(0, -19, 0));
+		this.drawPlayer(camera_transform, model_transform, gold, skin, bruin_blue, time);
+		model_transform = mult(model_transform, translate(0, 2, -5));
+		this.drawBall(camera_transform, model_transform, basketball, time);
+
+		// determination of z-axis
+		// -z is INTO the page, +z out of page
+
+		// combined transform example
+		/*var eye = vec3(0, 10, 10);
+		var at = vec3(0, 0, 0);
+		var up = vec3(0, 1, -1);	
+
+		camera_transform = lookAt(eye, at, up);
+		model_transform = mult(model_transform, scale(20, 20, 20));
+		model_transform = mult(model_transform, translate(0.5, 0.5, 0));
+		model_transform = mult(model_transform, rotate(this.graphicsState.animation_time/100, 0, 0, 1));
+		model_transform = mult(model_transform, translate(-0.5, -0.5, 0));
+		combined_transform = mult(camera_transform, model_transform);	
+		this.m_cube.draw(this.graphicsState, combined_transform, gold);*/
+		// end of example
+
 	}	
 
 
