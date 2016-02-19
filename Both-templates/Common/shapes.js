@@ -592,7 +592,7 @@ triangle.prototype.populate = function(recipient, points_transform) {
 
 function ramp(points_transform) {
 	shape.call(this);
-	//if (!arguments.length) return;
+	if (!arguments.length) return;
 	this.populate(this, points_transform);
 	this.init_buffers();
 }
@@ -635,6 +635,87 @@ ramp.prototype.populate = function(recipient, points_transform) {
 
 	recipient.indices.push(0, 1, 5, 3, 2, 4, 1, 2, 5, 2, 4, 5);
 
+}
+
+function ring(points_transform) {
+	shape.call(this);
+	if (!arguments.length) return;
+	this.populate(this, points_transform);
+	this.init_buffers();
+}
+inherit(ring, shape);
+
+ring.prototype.populate = function(recipient, points_transform) {
+	// need to populate:
+	// vertices, normals, texture_coords, indices
+	recipient.vertices = [];
+	recipient.normals = [];
+	recipient.texture_coords = [];
+	recipient.indices = [];
+
+	var num_circles = 32;
+	var num_points = 16;
+	var model_transform = mat4();
+
+	// draw ring
+	for (var k=0; k<num_circles; k++) {
+		var center_x = 2*Math.cos(2*Math.PI*k/num_circles);
+		var center_y = 0; 
+		var center_z = 2*Math.sin(2*Math.PI*k/num_circles);
+
+		var center = vec3(center_x, center_y, center_z);
+		var angle = 2*Math.PI*k/num_circles;
+
+		recipient.vertices.push(center);
+		recipient.normals.push(vec3(0, 0, 1)); // may need to revist this line
+		recipient.texture_coords.push(vec2(0, 0)); // and this line too
+
+		for (var i=1; i<=num_points; i++) {
+			var x = 0.25*Math.cos(2*Math.PI*i/num_points) + center_x;
+			var y = 0.25*Math.sin(2*Math.PI*i/num_points) + center_y; // center_y = 0
+			var z = center_z;
+
+			// rotate the vertex appropriately after translation
+			x -= center_x;
+			z -= center_z;
+			x = x*Math.cos(angle)-z*Math.sin(angle);
+			z = x*Math.sin(angle)+z*Math.cos(angle);
+			x += center_x;
+			z += center_z;
+
+			var vertex = vec3(x, y, z);
+			var normal = vertex;
+			
+			recipient.vertices.push(vertex);
+			recipient.normals.push(normal);
+			recipient.texture_coords.push(vec2(0,0)); // may need to revisit this line
+			if (k == num_circles-1) {
+				if (i == num_points) {
+					recipient.indices.push(k*(num_points+1), k*(num_points+1)+num_points, k*(num_points+1)+1);
+					recipient.indices.push(k*(num_points+1)+i, i, 1); 
+					recipient.indices.push(k*(num_points+1)+i, 1, k*(num_points+1)+1); 
+				}
+				else {
+					recipient.indices.push(k*(num_points+1), k*(num_points+1)+i, k*(num_points+1)+i+1);
+					recipient.indices.push(k*(num_points+1)+i, i, i+1); 
+					recipient.indices.push(k*(num_points+1)+i, i+1, k*(num_points+1)+i+1); 
+				}
+			}
+			else {
+				if (i == num_points) {
+					recipient.indices.push(k*(num_points+1), k*(num_points+1)+num_points, k*(num_points+1)+1);
+					recipient.indices.push(k*(num_points+1)+i, (k+1)*(num_points+1)+i, (k+1)*(num_points+1)+1); 
+					recipient.indices.push(k*(num_points+1)+i, (k+1)*(num_points+1)+1, k*(num_points+1)+1); 
+				}
+				else {
+					recipient.indices.push(k*(num_points+1), k*(num_points+1)+i, k*(num_points+1)+i+1);
+					recipient.indices.push(k*(num_points+1)+i, (k+1)*(num_points+1)+i, (k+1)*(num_points+1)+i+1); 
+					recipient.indices.push(k*(num_points+1)+i, (k+1)*(num_points+1)+i+1, k*(num_points+1)+i+1); 
+				}
+			}
+		}
+		
+	}
 }
 
 /*function square(points_transform) {
