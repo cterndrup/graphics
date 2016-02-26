@@ -209,74 +209,179 @@ Animation.prototype.drawHoop = function(c_transform, m_transform, length, board1
 Animation.prototype.drawBall = function(c_transform, m_transform, material, time) {
 
 	var combined_transform = mat4();
+	var bounce = time/1000 % 6;
+	var ball_scale = 0.8;
 
-	m_transform = mult(m_transform, translate(time/100, 0, 0));
+	if (bounce > 3) bounce = 6 - bounce;
+
+	m_transform = mult(m_transform, scale(0.8, 0.8, 0.8));
+	m_transform = mult(m_transform, translate(2/ball_scale+time/(ball_scale*500), -2/ball_scale-bounce, 1.5/ball_scale));
 	combined_transform = mult(c_transform, m_transform);
 	this.m_sphere.draw(this.graphicsState, combined_transform, material);
 }
 // *******************************************************
 // drawPlayer(): draw the basketball player
-Animation.prototype.drawPlayer = function(c_transform, m_transform, shoes, skin, uniform, time) {
+Animation.prototype.drawPlayer = function(c_transform, m_transform, shoes, skin, uniform, time, rot_time) {
 
 	var model_transform = m_transform;
 	var combined_transform = mat4();
+	var t = time/500;
 
 	// draw torso
-	m_transform = mult(m_transform, translate(time/100, 0, 0));
-	m_transform = mult(m_transform, scale(1, 2, 2));
+	var body_height = 2.5;
+	var body_width = 2;
+	var shorts_height = 2*body_height/5;
+	var shorts_width  = 2*body_width/3;
+
+	m_transform = mult(m_transform, scale(0.8, body_height, body_width));
+	m_transform = mult(m_transform, translate(t/0.8, 0, 0));
 	combined_transform = mult(c_transform, m_transform);	
 	this.m_cube.draw(this.graphicsState, combined_transform, uniform);
 	m_transform = model_transform;
-	m_transform = mult(m_transform, translate(time/100, 2, 0));
-	m_transform = mult(m_transform, scale(1, 4, 2.5));
+	m_transform = mult(m_transform, scale(0.8, shorts_height, shorts_width));
+	m_transform = mult(m_transform, translate(t/0.8, -0.5*body_height/shorts_height-0.5, 0));
 	combined_transform = mult(c_transform, m_transform);	
 	this.m_cube.draw(this.graphicsState, combined_transform, uniform);
+
+	// draw neck
+	var neck_height = 0.125;
+	var neck_width = 0.25*body_width;
+	var neck_length = 0.5;
+
 	m_transform = model_transform;
-	m_transform = mult(m_transform, translate(time/100, 4.125, 0));
-	m_transform = mult(m_transform, scale(1, 1/4, 1));
+	m_transform = mult(m_transform, scale(neck_length, neck_height, neck_width));
+	m_transform = mult(m_transform, translate(t/neck_length, 0.5*body_height/neck_height+0.5, 0));
 	combined_transform = mult(c_transform, m_transform);	
 	this.m_cube.draw(this.graphicsState, combined_transform, skin);
 
 	// draw head
+	var head_radius = 0.8;
 	m_transform = model_transform;
-	m_transform = mult(m_transform, translate(time/100, 5.25, 0));
+	m_transform = mult(m_transform, scale(head_radius, head_radius, head_radius));
+	m_transform = mult(m_transform, translate(t/head_radius, 0.5*body_height/head_radius+neck_height/head_radius+1, 0));
 	combined_transform = mult(c_transform, m_transform);	
 	this.m_sphere.draw(this.graphicsState, combined_transform, skin);
 
 	// draw legs & shoes
+	var leg_height = 1.5;
+	var leg_width  = 0.25;
+	var leg_length = 0.25;
 	var shift = 1;
+
 	for (var i=0; i<2; i++) {
-		if (shift) shift *= -1;
+		if (shift != 0) shift *= -1;
 		m_transform = model_transform;
-		m_transform = mult(m_transform, translate(time/100,-2,shift*0.5));
-		m_transform = mult(m_transform, scale(1/4, 1, 1/6));
+		var top_angle = (rot_time/100) % 180;
+		var bottom_angle = (rot_time/100) % 180;
+		
+		// leg angle rotation for running
+		if (shift == 1) {
+			if (top_angle > 45 && top_angle <= 135) top_angle = 90 - top_angle;
+			else if (top_angle > 135) top_angle =  -180 + top_angle;
+
+			if (bottom_angle < 90) bottom_angle = -top_angle;
+			else bottom_angle = top_angle;
+		}
+		else {
+			if (top_angle <= 45) top_angle *= -1;
+			else if (top_angle > 45 && top_angle <= 135) top_angle = -90 + top_angle;
+			else if (top_angle > 135) top_angle =  180 - top_angle;
+
+			if (bottom_angle < 90) bottom_angle = top_angle;
+			else bottom_angle = -top_angle;
+		}
+		
+		// upper leg rotation
+		m_transform = mult(m_transform, translate(t, -body_height/2-shorts_height, 0));
+		m_transform = mult(m_transform, rotate(top_angle, 0, 0, 1));
+		m_transform = mult(m_transform, translate(-t, body_height/2+shorts_height, 0));
+		
+		// upper leg draw
+		m_transform = mult(m_transform, scale(leg_length, leg_height, leg_width));
+		m_transform = mult(m_transform, translate(t/leg_length, -0.5*body_height/leg_height-shorts_height/leg_height-1/2, 1.5*shift));
 		combined_transform = mult(c_transform, m_transform);
-		this.m_sphere.draw(this.graphicsState, combined_transform, skin);
-		m_transform = mult(m_transform, translate(0,-2,shift*0.125));
+		this.m_cube.draw(this.graphicsState, combined_transform, skin);
+		
+		// lower leg rotation for running
+		m_transform = mult(m_transform, scale(1/leg_length, 1/leg_height, 1/leg_width));
+		m_transform = mult(m_transform, translate(0, -0.5*leg_height, 0));
+		m_transform = mult(m_transform, rotate(bottom_angle, 0, 0, 1));
+		m_transform = mult(m_transform, translate(0, 0.5*leg_height, 0));
+		m_transform = mult(m_transform, scale(leg_length, leg_height, leg_width));
+		//
+		
+		// lower leg
+		m_transform = mult(m_transform, translate(0, -1, 0));
 		combined_transform = mult(c_transform, m_transform);
-		this.m_sphere.draw(this.graphicsState, combined_transform, skin);
-		m_transform = mult(m_transform, translate(0,-1.25,shift*0.125));
-		m_transform = mult(m_transform, scale(2, 1/2, 2));
+		this.m_cube.draw(this.graphicsState, combined_transform, skin);
+
+		// shoes
+		var shoe_length = 0.25;
+		var shoe_width  = 0.25;
+		var shoe_height = 0.25;
+
+		m_transform = mult(m_transform, translate(0,-0.5*shoe_height/leg_height-1/2, 0));
+		m_transform = mult(m_transform, scale(1.5*shoe_length/leg_length, shoe_height/leg_height, shoe_width/leg_width));
 		combined_transform = mult(c_transform, m_transform);
 		this.m_cube.draw(this.graphicsState, combined_transform, shoes);
-		m_transform = mult(m_transform, translate(1, 0, shift*0.125));
+		m_transform = mult(m_transform, translate(1, 0, 0));
 		combined_transform = mult(c_transform, m_transform);
 		this.m_ramp.draw(this.graphicsState, combined_transform, shoes);
 	}
 
 	// draw arms
 	var shift = 1;
+	var arm_length = leg_length;
+	var arm_width = leg_height;
+	var arm_height = leg_length;
+	var shoulder_angle = 70;
+	var elbow_angle = 20;
+
 	for (var i=0; i<2; i++) {
 		if (shift) shift *= -1;
 		m_transform = model_transform;
-		m_transform = mult(m_transform, translate(time/100, 3, 2.125*shift));
-		m_transform = mult(m_transform, scale(1/4, 1/6, 1));
+		m_transform = mult(m_transform, scale(arm_length, arm_height, arm_width));
+		m_transform = mult(m_transform, translate(t/arm_length, 0.7*body_height/(2*arm_height), 0.5*shift*(body_width/arm_width+1)));
+
+		// angle arms downward
+		m_transform = mult(m_transform, scale(1/arm_length, 1/arm_height, 1/arm_width));
+		m_transform = mult(m_transform, translate(0, 0, -shift*arm_width/2));
+		m_transform = mult(m_transform, rotate(shift*shoulder_angle, 1, 0, 0));
+		m_transform = mult(m_transform, translate(0, 0, shift*arm_width/2));
+		m_transform = mult(m_transform, scale(arm_length, arm_height, arm_width));
+
+		// shoulder rotation for non-dribbling hand
+		var shoulder_angle_x = rot_time/100 % 180;
+		if (shift == 1) {
+			shoulder_angle_x = 45;
+		}
+		else {
+			if (shoulder_angle_x > 45 && shoulder_angle_x <= 135) shoulder_angle_x = 90 - shoulder_angle_x;
+			else if (shoulder_angle_x > 135) shoulder_angle_x = -180 + shoulder_angle_x;
+		}
+
+		m_transform = mult(m_transform, scale(1/arm_length, 1/arm_height, 1/arm_width));
+		m_transform = mult(m_transform, translate(0, 0, -shift*arm_width/2));
+		m_transform = mult(m_transform, rotate(-shift*shoulder_angle, 1, 0, 0));
+		m_transform = mult(m_transform, rotate(shoulder_angle_x, 0, 0, 1));
+		m_transform = mult(m_transform, rotate(shift*shoulder_angle, 1, 0, 0));
+		m_transform = mult(m_transform, translate(0, 0, shift*arm_width/2));
+		m_transform = mult(m_transform, scale(arm_length, arm_height, arm_width));
+
+		// draw upper arm
 		combined_transform = mult(c_transform, m_transform);
-		this.m_sphere.draw(this.graphicsState, combined_transform, skin);
-		m_transform = mult(m_transform, translate(0, 0, 1.5*shift));
-		m_transform = mult(m_transform, scale(1, 1, 1.5));
+		this.m_cube.draw(this.graphicsState, combined_transform, skin);
+
+		// elbow rotation
+		m_transform = mult(m_transform, translate(0, 0, shift/2));
+		m_transform = mult(m_transform, scale(1/arm_length, 1/arm_height, 1/arm_width));
+		m_transform = mult(m_transform, rotate(shift*elbow_angle, 1, 0, 0));
+		m_transform = mult(m_transform, scale(arm_length, arm_height, arm_width));
+		m_transform = mult(m_transform, translate(0, 0, shift/2));
+
+		// draw lower arm
 		combined_transform = mult(c_transform, m_transform);
-		this.m_sphere.draw(this.graphicsState, combined_transform, skin);
+		this.m_cube.draw(this.graphicsState, combined_transform, skin);
 	}
 	
 	
@@ -332,9 +437,9 @@ Animation.prototype.display = function(time)
 		var up  = vec3();
 
 		if (time < 2000) {
-			eye = vec3(-50*Math.sin(Math.PI*time/4000), 50, -50*Math.cos(Math.PI*time/4000));
+			eye = vec3(-50*Math.sin(Math.PI*time/4000), 50, 50*Math.cos(Math.PI*time/4000));
 			at  = vec3(0, 0, 0);
-			up  = vec3(Math.sin(Math.PI*time/4000), 0, Math.cos(Math.PI*time/4000));
+			up  = vec3(Math.sin(Math.PI*time/4000), 0, -Math.cos(Math.PI*time/4000));
 		}
 		else if (time >= 2000 && time < 4000) {
 			eye = vec3(-50, 50, 0);
@@ -357,29 +462,12 @@ Animation.prototype.display = function(time)
 			up  = vec3(1, 0, 0);
 		}
 		camera_transform = lookAt(eye, at, up);
+		//camera_transform = mat4(vec4(1, 0, 0, 0), vec4(0, 1, 0, 0), vec4(0, 0, 1, 0), vec4(0, 0, 0, 1));
 
 		this.drawCourt(camera_transform, model_transform, floor, blue, UCLA, backboard, rim, grayish);
 		model_transform = mult(model_transform, translate(0, -19, 0));
-		this.drawPlayer(camera_transform, model_transform, gold, skin, bruin_blue, time);
-		model_transform = mult(model_transform, translate(0, 2, -5));
+		this.drawPlayer(camera_transform, model_transform, blue, skin, bruin_blue, time, time);
 		this.drawBall(camera_transform, model_transform, basketball, time);
-
-		// determination of z-axis
-		// -z is INTO the page, +z out of page
-
-		// combined transform example
-		/*var eye = vec3(0, 10, 10);
-		var at = vec3(0, 0, 0);
-		var up = vec3(0, 1, -1);	
-
-		camera_transform = lookAt(eye, at, up);
-		model_transform = mult(model_transform, scale(20, 20, 20));
-		model_transform = mult(model_transform, translate(0.5, 0.5, 0));
-		model_transform = mult(model_transform, rotate(this.graphicsState.animation_time/100, 0, 0, 1));
-		model_transform = mult(model_transform, translate(-0.5, -0.5, 0));
-		combined_transform = mult(camera_transform, model_transform);	
-		this.m_cube.draw(this.graphicsState, combined_transform, gold);*/
-		// end of example
 
 	}	
 
