@@ -6,7 +6,7 @@
 // *******************************************************
 // IMPORTANT -- In the line below, add the filenames of any new images you want to include for textures!
 
-var texture_filenames_to_load = [ "stars.png", "text.png", "earth.gif", "basketball.png", "court.jpg", "backboard.jpg", "UCLA_Bruins.jpg"];
+var texture_filenames_to_load = [ "stars.png", "text.png", "earth.gif", "basketball.png", "court.jpg", "UCLA_Bruins.jpg"];
 
 // *******************************************************
 // IMPORTANT -- Any new shader variables you define need to have a line added to class Graphics_Addresses below, so their addresses can be retrieved.
@@ -86,7 +86,7 @@ function GL_Context( canvas_id )
 // *******************************************************
 // Debug_Screen - Displays the text of the user interface
 function Debug_Screen()	
-{	this.string_map = { };	this.m_text = new text_line( 20 ); 		this.start_index = 2;	this.tick = 0;
+{	this.string_map = { };	this.m_text = new text_line( 20 ); 		this.start_index = 0;	this.tick = 0;
 	this.graphicsState = new GraphicsState( mat4(), mat4(), 0 );
 }
 
@@ -109,14 +109,14 @@ function Debug_Screen()
 			
 			model_transform     = mult( model_transform, translate( 0, 20, -32 ) );
 			this.m_text.set_string( "Controls:" );
-			this.m_text.draw( this.graphicsState, model_transform, true, vec4(1,1,1,1) );		// Comment this out to not display any strings on the UI
+			//this.m_text.draw( this.graphicsState, model_transform, true, vec4(1,1,1,1) );		// Comment this out to not display any strings on the UI
 			
 			var key_combinations = Object.keys( shortcut.all_shortcuts );
 			for( var i = 0; i < key_combinations.length; i++ )
 			{
 				model_transform = mult( model_transform, translate( 0, -1, 0 ) );				
 				this.m_text.set_string( key_combinations[i] );
-				this.m_text.draw( this.graphicsState, model_transform, true, vec4(1,1,1,1) );		// Comment this out to not display any controls on the UI
+				//this.m_text.draw( this.graphicsState, model_transform, true, vec4(1,1,1,1) );		// Comment this out to not display any controls on the UI
 			}
 	}
 
@@ -128,7 +128,7 @@ function Debug_Screen()
 
 	Debug_Screen.prototype.update_strings = function( debug_screen_object ) 			// Strings this particular class contributes to the UI
 	{
-		debug_screen_object.string_map["tick"] = "Frame: " + this.tick++;
-		debug_screen_object.string_map["start_index"] = "start_index: " + this.start_index;
+		//debug_screen_object.string_map["tick"] = "Frame: " + this.tick++;
+		//debug_screen_object.string_map["start_index"] = "start_index: " + this.start_index;
 	}
 
