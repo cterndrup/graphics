@@ -270,7 +270,7 @@ Animation.prototype.drawPlayer = function(c_transform, m_transform, shoes, skin,
 	var jump_fall_time = 13000;
 	var jump_end_time = 14000;
 	var celebration_time = 15000;
-	var celebration_angle = (time > celebration_time) ? 90 : 0;
+	var celebration_angle = 0;
 	var celebration_position = [145, 0, 0];
 	var jump_offset = 8;
 	var jump_peak_height = (jump_peak_time - jump_time)/500 + jump_offset;
@@ -285,6 +285,13 @@ Animation.prototype.drawPlayer = function(c_transform, m_transform, shoes, skin,
 	}
 	else if (time > jump_fall_time && time < jump_end_time) {
 		y = jump_peak_height*(jump_end_time - time)/(jump_end_time-jump_fall_time);
+	}
+	else if (time >= celebration_time && time < celebration_time+1000) {
+		celebration_angle = -90*(time-celebration_time)/1000;
+	} 
+	else if (time >= celebration_time+1000) {
+		celebration_angle = -90;
+		y = 4*(time % 1500)/1500 > 2 ? 4*(1500-(time % 1500))/1500 : 4*(time % 1500)/1500;
 	}
 
 	// draw torso
@@ -368,9 +375,13 @@ Animation.prototype.drawPlayer = function(c_transform, m_transform, shoes, skin,
 				bottom_angle = -45 + 45*(time-jump_fall_time)/(jump_end_time-jump_fall_time);
 				
 			}
-			else if (time >= jump_end_time) {
+			else if (time >= jump_end_time && time < celebration_time+1000) {
 				top_angle = 0;
 				bottom_angle = 0;
+			}
+			else if (time >= celebration_time+1000) {
+				bottom_angle = -180*(time % 1500)/1500 < -90 ? -180*(1500 - (time % 1500))/1500 : -180*(time % 1500)/1500;
+				top_angle = 0;
 			}
 		
 		}
@@ -393,9 +404,13 @@ Animation.prototype.drawPlayer = function(c_transform, m_transform, shoes, skin,
 				bottom_angle = -45 + 45*(time-jump_fall_time)/(jump_end_time-jump_fall_time);
 				
 			}
-			else if (time >= jump_end_time) {
+			else if (time >= jump_end_time && time < celebration_time+1000) {
 				top_angle = 0;
 				bottom_angle = 0;
+			}
+			else if (time >= celebration_time+1000) {
+				bottom_angle = -180*(time % 1500)/1500  < -90 ? -180*(1500 - (time % 1500))/1500 : -180*(time % 1500)/1500;
+				top_angle = 0;
 			}
 		
 		}
@@ -477,8 +492,11 @@ Animation.prototype.drawPlayer = function(c_transform, m_transform, shoes, skin,
 			else if (time >= jump_fall_time && time < jump_end_time) {
 				shoulder_angle_x = 135*(jump_end_time-time)/(jump_end_time-jump_fall_time);
 			}
-			else if (time >= jump_end_time) {
+			else if (time >= jump_end_time && time < celebration_time+1000) {
 				shoulder_angle_x = 0;
+			} 
+			else if (time >= celebration_time+1000) {
+				shoulder_angle_x = 360*(time % 1500)/1500 > 180 ? 360*(1500 - (time % 1500))/1500 : 360*(time % 1500)/1500;
 			}
 		}
 		else {
@@ -570,12 +588,13 @@ Animation.prototype.display = function(time)
 
 		//model_transform = mult(model_transform, rotate(90, 0, 1, 0));
 		var time = this.graphicsState.animation_time;
-		var time_scale = 1;
 		var arena_pan = 8000;
 		var follow_player = 13000;
-		var player_closeup = (follow_player+1000) + 21250*time_scale;
-		//var player_time = (time < (follow_player+1000)) ? 0 : time - (follow_player+1000);
-		var player_time = time;
+		var jump_time = follow_player + 7290;
+		var back_view = jump_time + 500;
+		var player_closeup = (follow_player+1000) + 14000;
+		var celebration_end_time = player_closeup+2000;
+		var player_time = (time < (follow_player+1000)) ? 0 : time - (follow_player+1000);
 
 		var eye = vec3();
 		var at  = vec3();
@@ -587,28 +606,43 @@ Animation.prototype.display = function(time)
 			up  = vec3(Math.sin(Math.PI*time/4000), 0, -Math.cos(Math.PI*time/4000));
 		}
 		else if (time >= arena_pan && time < follow_player) {
-			eye = vec3(0, 5+95*(follow_player-time)/(follow_player-arena_pan), 5+95*(follow_player-time)/(follow_player-arena_pan));
+			eye = vec3(0, 3+97*(follow_player-time)/(follow_player-arena_pan), 5+95*(follow_player-time)/(follow_player-arena_pan));
 			at  = vec3(0, 0, 0);
 			up  = vec3(0, 0, -1);
 		}
 		else if (time >= follow_player && time < (follow_player+1000)) {
-			eye = vec3(0, 5, 5);
+			eye = vec3(0, 3, 5);
 			at  = vec3(0, 0, 0);
 			up  = vec3(0, 0, -1);
 		}
-		else if (time >= (follow_player+1000) && time < player_closeup) {
-			eye = vec3(110*(time-follow_player-1000)/(player_closeup-follow_player-1000), 5, 5);
-			at  = vec3(110*(time-follow_player-1000)/(player_closeup-follow_player-1000), 0, 0);
+		else if (time >= (follow_player+1000) && time < back_view) {
+			eye = vec3(145*(time-follow_player-1000)/(player_closeup-follow_player-1000), 3, 5);
+			at  = vec3(145*(time-follow_player-1000)/(player_closeup-follow_player-1000), 0, 0);
+			up  = vec3(0, 0, -1);
+		}
+		else if (time >= back_view && time < (back_view+3000)) {
+			eye = vec3(20, 10, 0);
+			at  = vec3(145, 0, 0);
+			up  = vec3(0, 1, 0);
+		}
+		else if (time >= (back_view+3000) && time < player_closeup) {
+			eye = vec3(145*(time-follow_player-1000)/(player_closeup-follow_player-1000), 3, 5);
+			at  = vec3(145*(time-follow_player-1000)/(player_closeup-follow_player-1000), 0, 0);
+			up  = vec3(0, 0, -1);
+		}
+		else if (time >= player_closeup && time < celebration_end_time) {
+			eye = vec3(145, -10+13*(celebration_end_time-time)/(celebration_end_time-player_closeup), 0.5+4.5*(celebration_end_time-time)/(celebration_end_time-player_closeup));
+			at  = vec3(145, -10*(time-player_closeup)/(celebration_end_time-player_closeup), 0);
 			up  = vec3(0, 0, -1);
 		}
 		else {
-			eye = vec3(110, 5, 5);
-			at  = vec3(110, 0, 0);
-			up  = vec3(0, 0, -1);
+			eye = vec3(145, -10, 0.5);
+			at  = vec3(145, -10, 0);
+			up  = vec3(0, 1, -1);
 		}
 
 		camera_transform = lookAt(eye, at, up);
-		camera_transform = mat4(vec4(1, 0, 0, 0), vec4(0, 1, 0, 0), vec4(0, 0, 1, 0), vec4(0, 0, 0, 1));
+		//camera_transform = mat4(vec4(1, 0, 0, 0), vec4(0, 1, 0, 0), vec4(0, 0, 1, 0), vec4(0, 0, 0, 1));
 
 		this.drawCourt(camera_transform, model_transform, floor, blue, UCLA, backboard, rim, grayish);
 		model_transform = mult(model_transform, translate(0, -19, 0));
