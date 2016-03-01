@@ -210,20 +210,20 @@ Animation.prototype.drawBall = function(c_transform, m_transform, material, time
 
 	var combined_transform = mat4();
 	var ball_scale = 0.8;
-	var jump_time = 12600;
-	var jump_peak_time = 17000;
-	var jump_fall_time = 19500;
-	var jump_end_time = 21250;
-	var jump_offset = 7;
+	var jump_time = 7290;
+	var jump_peak_time = (13000+jump_time)/2 + 1000;
+	var jump_fall_time = 13000;
+	var jump_end_time = 14000;
+	var jump_offset = 8;
 	var ball_offset_x = 0;
 	var ball_offset_y = 4.8;
 	var jump_peak_height = (jump_peak_time - jump_time)/500 + jump_offset + ball_offset_y;
 	var y = 0;
-	var t = (time < jump_end_time+500) ? time/150 : (jump_end_time+500)/150;
+	var t = (time < jump_end_time+500) ? time/100 : (jump_end_time+500)/100;
 	var bounce_height = 6.75;
 	var bounce_interval = 6.75;
-	var bounce_end_time = bounce_height*700 + jump_end_time+500;
-	var bounce = (time/700 % bounce_height);
+	var bounce_end_time = bounce_height*400 + jump_end_time+500;
+	var bounce = (time/400 % bounce_height);
 
 	if (time >= 0 && time < jump_time) {
 		if (bounce >= bounce_height/2) bounce = bounce_height - bounce;
@@ -244,8 +244,8 @@ Animation.prototype.drawBall = function(c_transform, m_transform, material, time
 		bounce = 0;
 	}
 	else if (time >= jump_end_time && time < bounce_end_time) {
-		bounce_height = (bounce_height > 0) ? bounce_height - (time-jump_end_time)/700 : 0;
-		bounce = (time/700 % bounce_height);
+		bounce_height = (bounce_height > 0) ? bounce_height - (time-jump_end_time)/400 : 0;
+		bounce = (time/400 % bounce_height);
 		if (bounce >= bounce_height/2) bounce = bounce_height - bounce;
 		bounce += (bounce_interval-bounce_height)/2;
 	}
@@ -265,16 +265,16 @@ Animation.prototype.drawPlayer = function(c_transform, m_transform, shoes, skin,
 
 	var model_transform = m_transform;
 	var combined_transform = mat4();
-	var jump_time = 12600; // player begins jump after 12.6 seconds have elapsed
-	var jump_peak_time = 17000;
-	var jump_fall_time = 19500;
-	var jump_end_time = 21250;
-	var celebration_time = 22000;
+	var jump_time = 7290; // player begins jump after 12.6 seconds have elapsed
+	var jump_peak_time = (13000+jump_time)/2 + 1000;
+	var jump_fall_time = 13000;
+	var jump_end_time = 14000;
+	var celebration_time = 15000;
 	var celebration_angle = (time > celebration_time) ? 90 : 0;
 	var celebration_position = [145, 0, 0];
-	var jump_offset = 7;
+	var jump_offset = 8;
 	var jump_peak_height = (jump_peak_time - jump_time)/500 + jump_offset;
-	var t = (time < (jump_end_time+500)) ? time/150 : (jump_end_time+500)/150;
+	var t = (time < (jump_end_time+500)) ? time/100 : (jump_end_time+500)/100;
 	var y = 0;
 
 	if (time > jump_time && time <= jump_peak_time) {
@@ -346,8 +346,8 @@ Animation.prototype.drawPlayer = function(c_transform, m_transform, shoes, skin,
 		m_transform = mult(m_transform, translate(celebration_position[0], celebration_position[1], celebration_position[2]));	
 		m_transform = mult(m_transform, rotate(celebration_angle, 0, 1, 0));
 		m_transform = mult(m_transform, translate(-celebration_position[0], -celebration_position[1], -celebration_position[2]));	
-		var top_angle = (time/40) % 180;
-		var bottom_angle = (time/40) % 180;
+		var top_angle = (time/15) % 180;
+		var bottom_angle = (time/15) % 180;
 		
 		// leg angle rotation for running
 		if (shift == 1) {
@@ -463,7 +463,7 @@ Animation.prototype.drawPlayer = function(c_transform, m_transform, shoes, skin,
 		m_transform = mult(m_transform, scale(arm_length, arm_height, arm_width));
 
 		// shoulder rotation for non-dribbling hand
-		var shoulder_angle_x = time/40 % 180;
+		var shoulder_angle_x = time/15 % 180;
 		if (shift == 1) {
 			shoulder_angle_x = 45;
 
@@ -569,11 +569,13 @@ Animation.prototype.display = function(time)
 		**********************************/
 
 		//model_transform = mult(model_transform, rotate(90, 0, 1, 0));
-		var time = this.graphicsState.animation_time; 
+		var time = this.graphicsState.animation_time;
+		var time_scale = 1;
 		var arena_pan = 8000;
-		var follow_player = 8500;
-		var player_closeup = 0.6*(follow_player + 21250);
-		var player_time = (time < arena_pan) ? 0 : time - arena_pan;
+		var follow_player = 13000;
+		var player_closeup = (follow_player+1000) + 21250*time_scale;
+		//var player_time = (time < (follow_player+1000)) ? 0 : time - (follow_player+1000);
+		var player_time = time;
 
 		var eye = vec3();
 		var at  = vec3();
@@ -584,44 +586,29 @@ Animation.prototype.display = function(time)
 			at  = vec3(0, 0, 0);
 			up  = vec3(Math.sin(Math.PI*time/4000), 0, -Math.cos(Math.PI*time/4000));
 		}
-		/*else if (time >= 2000 && time < 4000) {
-			eye = vec3(-50, 50, 0);
-			at  = vec3(25*(time-2000)/1000, 15*(time-2000)/1000, 0);
-			up  = vec3(1, 0, 0);
-		}
-		else if (time >= 4000 && time < 5000) {
-			eye = vec3(-50, 50, 0);
-			at  = vec3(50, 30, 0);
-			up  = vec3(1, 0, 0);
-		}
-		else if (time >= 5000 && time < 7000) {
-			eye = vec3(-50+50*(time-5000)/1000, 50, 0);
-			at  = vec3(50+12.5*(time-5000)/1000, 30, 0);
-			up  = vec3(1, 0, 0);
-		}
-		else {
-			eye = vec3(50, 50, 0);
-			at  = vec3(75, 30, 0);
-			up  = vec3(1, 0, 0);
-		}*/
 		else if (time >= arena_pan && time < follow_player) {
-			eye = vec3(0, 100, 100);
+			eye = vec3(0, 5+95*(follow_player-time)/(follow_player-arena_pan), 5+95*(follow_player-time)/(follow_player-arena_pan));
 			at  = vec3(0, 0, 0);
 			up  = vec3(0, 0, -1);
 		}
-		else if (time >= follow_player && time < player_closeup) {
-			eye = vec3(120*(time-follow_player)/(player_closeup-follow_player), 10+90*(player_closeup-time)/(player_closeup-follow_player), 15+85*(player_closeup-time)/(player_closeup-follow_player));
-			at  = vec3(115*(time-follow_player)/(player_closeup-follow_player), 0, 0);
+		else if (time >= follow_player && time < (follow_player+1000)) {
+			eye = vec3(0, 5, 5);
+			at  = vec3(0, 0, 0);
+			up  = vec3(0, 0, -1);
+		}
+		else if (time >= (follow_player+1000) && time < player_closeup) {
+			eye = vec3(110*(time-follow_player-1000)/(player_closeup-follow_player-1000), 5, 5);
+			at  = vec3(110*(time-follow_player-1000)/(player_closeup-follow_player-1000), 0, 0);
 			up  = vec3(0, 0, -1);
 		}
 		else {
-			eye = vec3(120, 10, 15);
-			at  = vec3(115, 0, 0);
+			eye = vec3(110, 5, 5);
+			at  = vec3(110, 0, 0);
 			up  = vec3(0, 0, -1);
 		}
 
 		camera_transform = lookAt(eye, at, up);
-		//camera_transform = mat4(vec4(1, 0, 0, 0), vec4(0, 1, 0, 0), vec4(0, 0, 1, 0), vec4(0, 0, 0, 1));
+		camera_transform = mat4(vec4(1, 0, 0, 0), vec4(0, 1, 0, 0), vec4(0, 0, 1, 0), vec4(0, 0, 0, 1));
 
 		this.drawCourt(camera_transform, model_transform, floor, blue, UCLA, backboard, rim, grayish);
 		model_transform = mult(model_transform, translate(0, -19, 0));
