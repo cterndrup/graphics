@@ -95,7 +95,7 @@ function update_camera( self, animation_delta_time )
 
 // *******************************************************
 // drawCourt(): draw the basketball court
-Animation.prototype.drawCourt = function(c_transform, m_transform, floor, roof, siding, board1, rim, supports) {
+Animation.prototype.drawCourt = function(c_transform, m_transform, floor, roof, siding, board1, rim, supports, net) {
 
 	var model_transform = m_transform;
 	var combined_transform = mat4();
@@ -142,17 +142,17 @@ Animation.prototype.drawCourt = function(c_transform, m_transform, floor, roof, 
 	// draw the basketball hoops, one at each end of the court
 	m_transform = model_transform;
 	m_transform = mult(m_transform, translate(length/4-6, 0, 0));
-	this.drawHoop(c_transform, m_transform, length, board1, rim, supports);
+	this.drawHoop(c_transform, m_transform, length, board1, rim, supports, net);
 	m_transform = model_transform;
 	m_transform = mult(m_transform, translate(-length/4+6, 0, 0));
 	m_transform = mult(m_transform, scale(-1, 1, 1));
-	this.drawHoop(c_transform, m_transform, length, board1, rim, supports);
+	this.drawHoop(c_transform, m_transform, length, board1, rim, supports, net);
 	
 
 }
 // *******************************************************
 // drawHoop(): draw basketball hoop
-Animation.prototype.drawHoop = function(c_transform, m_transform, length, board1, rim, supports) {
+Animation.prototype.drawHoop = function(c_transform, m_transform, length, board1, rim, supports, net) {
 
 	var model_transform = m_transform;
 	var combined_transform = mat4();
@@ -202,6 +202,27 @@ Animation.prototype.drawHoop = function(c_transform, m_transform, length, board1
 	m_transform = mult(m_transform, translate(-9.75, -2, 0))
 	combined_transform = mult(c_transform, m_transform);
 	this.m_ring.draw(this.graphicsState, combined_transform, rim);
+
+	// draw net
+	m_transform = model_transform;
+	m_transform = mult(m_transform, scale(0.8, 0.8, 0.8));
+	m_transform = mult(m_transform, translate(-9.75/0.8, -3/0.8, 0));
+	combined_transform = mult(c_transform, m_transform);
+	this.m_ring.draw(this.graphicsState, combined_transform, net);
+	for (var i=0; i<2; i++) {
+		m_transform = mult(m_transform, translate(0, -1, 0));
+		combined_transform = mult(c_transform, m_transform);
+		this.m_ring.draw(this.graphicsState, combined_transform, net);
+	}
+
+	m_transform = model_transform;
+	m_transform = mult(m_transform, scale(0.2, 3.5, 0.2));
+	m_transform = mult(m_transform, translate(-11.4/0.2, -3.5/3.5, -0.5/0.2));
+	for (var i=0; i<11; i++) {
+		m_transform = mult(m_transform, translate(1.05*Math.sin(2*Math.PI*i/10)/0.2, 0, 1.05*Math.cos(2*Math.PI*i/10)/0.2));
+		combined_transform = mult(c_transform, m_transform);
+		this.m_cube.draw(this.graphicsState, combined_transform, net);
+	}
 
 }
 // *******************************************************
@@ -286,10 +307,10 @@ Animation.prototype.drawPlayer = function(c_transform, m_transform, shoes, skin,
 	else if (time > jump_fall_time && time < jump_end_time) {
 		y = jump_peak_height*(jump_end_time - time)/(jump_end_time-jump_fall_time);
 	}
-	else if (time >= celebration_time && time < celebration_time+1000) {
-		celebration_angle = -90*(time-celebration_time)/1000;
+	else if (time >= celebration_time && time < celebration_time+1500) {
+		celebration_angle = -90*(time-celebration_time)/1500;
 	} 
-	else if (time >= celebration_time+1000) {
+	else if (time >= celebration_time+1500) {
 		celebration_angle = -90;
 		y = 4*(time % 1500)/1500 > 2 ? 4*(1500-(time % 1500))/1500 : 4*(time % 1500)/1500;
 	}
@@ -375,11 +396,11 @@ Animation.prototype.drawPlayer = function(c_transform, m_transform, shoes, skin,
 				bottom_angle = -45 + 45*(time-jump_fall_time)/(jump_end_time-jump_fall_time);
 				
 			}
-			else if (time >= jump_end_time && time < celebration_time+1000) {
+			else if (time >= jump_end_time && time < celebration_time+1500) {
 				top_angle = 0;
 				bottom_angle = 0;
 			}
-			else if (time >= celebration_time+1000) {
+			else if (time >= celebration_time+1500) {
 				bottom_angle = -180*(time % 1500)/1500 < -90 ? -180*(1500 - (time % 1500))/1500 : -180*(time % 1500)/1500;
 				top_angle = 0;
 			}
@@ -404,11 +425,11 @@ Animation.prototype.drawPlayer = function(c_transform, m_transform, shoes, skin,
 				bottom_angle = -45 + 45*(time-jump_fall_time)/(jump_end_time-jump_fall_time);
 				
 			}
-			else if (time >= jump_end_time && time < celebration_time+1000) {
+			else if (time >= jump_end_time && time < celebration_time+1500) {
 				top_angle = 0;
 				bottom_angle = 0;
 			}
-			else if (time >= celebration_time+1000) {
+			else if (time >= celebration_time+1500) {
 				bottom_angle = -180*(time % 1500)/1500  < -90 ? -180*(1500 - (time % 1500))/1500 : -180*(time % 1500)/1500;
 				top_angle = 0;
 			}
@@ -492,10 +513,10 @@ Animation.prototype.drawPlayer = function(c_transform, m_transform, shoes, skin,
 			else if (time >= jump_fall_time && time < jump_end_time) {
 				shoulder_angle_x = 135*(jump_end_time-time)/(jump_end_time-jump_fall_time);
 			}
-			else if (time >= jump_end_time && time < celebration_time+1000) {
+			else if (time >= jump_end_time && time < celebration_time+1500) {
 				shoulder_angle_x = 0;
 			} 
-			else if (time >= celebration_time+1000) {
+			else if (time >= celebration_time+1500) {
 				shoulder_angle_x = 360*(time % 1500)/1500 > 180 ? 360*(1500 - (time % 1500))/1500 : 360*(time % 1500)/1500;
 			}
 		}
@@ -575,7 +596,7 @@ Animation.prototype.display = function(time)
 
 		var floor      = new Material( vec4(.5, .5, .5, 1), 1, 1, 1, 40, "court.jpg");
 		var basketball = new Material( vec4(.5, .5, .5, 1), 1, 1, 1, 40, "basketball.png");
-		var backboard  = new Material( vec4(.5, .5, .5, 1), 1, 1, 1, 40, "backboard.jpg"); // texture placement is off center -- fix later
+		var backboard  = new Material( vec4(255, 255, 255, 1), 1, 1, 1, 40);
 		var rim        = new Material( vec4(218/255, 98/255, 0, 1), 1, 1, 1, 40); 
 		var UCLA       = new Material( vec4(.5, .5, .5, 1), 1, 1, 1, 40, "UCLA_Bruins.jpg");
 		var skin       = new Material( vec4(180/255, 128/255, 89/255, 1), 1, 1, 1, 40);
@@ -586,15 +607,18 @@ Animation.prototype.display = function(time)
 		Start coding here!!!!
 		**********************************/
 
-		//model_transform = mult(model_transform, rotate(90, 0, 1, 0));
 		var time = this.graphicsState.animation_time;
+
+		// time variables for camera movement in the animation
 		var arena_pan = 8000;
 		var follow_player = 13000;
 		var jump_time = follow_player + 7290;
 		var back_view = jump_time + 500;
 		var player_closeup = (follow_player+1000) + 14000;
-		var celebration_end_time = player_closeup+2000;
+		var celebration_end_time = player_closeup+1500;
 		var player_time = (time < (follow_player+1000)) ? 0 : time - (follow_player+1000);
+
+		// position variables for camera movement in the animation
 
 		var eye = vec3();
 		var at  = vec3();
@@ -621,7 +645,7 @@ Animation.prototype.display = function(time)
 			up  = vec3(0, 0, -1);
 		}
 		else if (time >= back_view && time < (back_view+3000)) {
-			eye = vec3(20, 10, 0);
+			eye = vec3(40, 10, 0);
 			at  = vec3(145, 0, 0);
 			up  = vec3(0, 1, 0);
 		}
@@ -642,9 +666,8 @@ Animation.prototype.display = function(time)
 		}
 
 		camera_transform = lookAt(eye, at, up);
-		//camera_transform = mat4(vec4(1, 0, 0, 0), vec4(0, 1, 0, 0), vec4(0, 0, 1, 0), vec4(0, 0, 0, 1));
 
-		this.drawCourt(camera_transform, model_transform, floor, blue, UCLA, backboard, rim, grayish);
+		this.drawCourt(camera_transform, model_transform, floor, blue, UCLA, backboard, rim, grayish, white);
 		model_transform = mult(model_transform, translate(0, -19, 0));
 		this.drawPlayer(camera_transform, model_transform, blue, skin, bruin_blue, player_time);
 		this.drawBall(camera_transform, model_transform, basketball, player_time);
@@ -655,9 +678,9 @@ Animation.prototype.display = function(time)
 
 Animation.prototype.update_strings = function( debug_screen_object )		// Strings this particular class contributes to the UI
 {
-	debug_screen_object.string_map["time"] = "Animation Time: " + this.graphicsState.animation_time/1000 + "s";
-	debug_screen_object.string_map["basis"] = "Showing basis: " + this.m_axis.basis_selection;
-	debug_screen_object.string_map["animate"] = "Animation " + (animate ? "on" : "off") ;
-	debug_screen_object.string_map["thrust"] = "Thrust: " + thrust;
+	//debug_screen_object.string_map["time"] = "Animation Time: " + this.graphicsState.animation_time/1000 + "s";
+	//debug_screen_object.string_map["basis"] = "Showing basis: " + this.m_axis.basis_selection;
+	//debug_screen_object.string_map["animate"] = "Animation " + (animate ? "on" : "off") ;
+	//debug_screen_object.string_map["thrust"] = "Thrust: " + thrust;
 	debug_screen_object.string_map["fps"] = "FPS: " + 1000/(this.animation_delta_time+0.001); // display frames per second
 }
