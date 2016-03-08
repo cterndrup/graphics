@@ -63,7 +63,7 @@ vector<struct Light> light_sources;
 
 const char *outfile; // output file name
 
-mat4 perspective; //perspective transformation matrix
+//const mat4 modelTransform;
 
 // -------------------------------------------------------------------
 // Input file parsing
@@ -200,25 +200,30 @@ vec3 toVec3(vec4 in)
 // Intersection routine
 
 // TODO: add your ray-sphere intersection routine here.
-bool intersect(const Sphere& Sphere, const Ray& ray, vec4& intersection)
+bool intersect(const Sphere& sphere, const Ray& ray, const string& type, vec4& intersection, float& t_min)
 {
-    // 1. calculate inverse perspective projection transform
-    mat4 perspectiveInverse;
-    bool invertible = InvertMatrix(perspective, perspectiveInverse);
+    // 1. calculate inverse model transform
+    mat4 modelInverse;
+    modelInverse[0][0] = 1/sphere.scl_x;
+    modelInverse[1][1] = 1/sphere.scl_y;
+    modelInverse[2][2] = 1/sphere.scl_z;
+    modelInverse[3][3] = 1.0f;
+
+    /*bool invertible = InvertMatrix(modelTransform, modelInverse);
     if (!invertible) {
         cout << "Non-invertible matrix" << endl;
         intersection = vec4(0.0f, 0.0f, 0.0f, 1.0f);
         return false;
-    }
+    }*/
     
     // 2. solve quadratic
     Ray inverseRay;
-    inverseRay.origin = perspectiveInverse*ray.origin;
-    inverseRay.dir    = perspectiveInverse*ray.dir;
+    inverseRay.origin = modelInverse*ray.origin;
+    inverseRay.dir    = modelInverse*ray.dir;
     
     float t1, t2;
     vec3 temp = toVec3(inverseRay.origin);
-    float a = dot(inverseRay.dir, inverseRay.dir); // assuming this computes dot product
+    float a = dot(inverseRay.dir, inverseRay.dir);
     float b = dot(2*inverseRay.origin, inverseRay.dir);
     float c = dot(temp, temp) - 1.0f; // convert to vec3 so that point's 4th coordinate
                                       // doesn't corrupt dot product
@@ -229,10 +234,33 @@ bool intersect(const Sphere& Sphere, const Ray& ray, vec4& intersection)
         return false;
     }
     
-    float t_h = (t1 < t2) ? t1 : t2; // may need additional checking
+    float t_h;
+    float minimum_dist;
+    if (type.compare("object") == 0)
+    {
+        minimum_dist = 1;
+        t_h = (t1 < t2) ? t1 : t2;
+        if (t_h <= minimum_dist) return false;
+        
+    } else if (type.compare("shadow") == 0)
+    {
+        minimum_dist = 0.0001;
+        const float t_smaller = (t1 < t2) ? t1 : t2;
+        const float t_larger  = (t1 > t2) ? t1 : t2;
+        
+        if (t_smaller > minimum_dist && t_smaller < 1) t_h = t_smaller;
+        else if (t_larger > minimum_dist && t_larger < 1) t_h = t_larger;
+        else return false;
+        
+    } else
+    {
+        cout << "Invalid intersection type" << endl;
+        return false;
+    }
     
     // 3. use t_h result from quadratic in untransformed Ray to find
     //    intersection point
+    t_min = t_h;
     intersection = ray.origin + t_h*ray.dir;
     
     return true;
@@ -249,12 +277,29 @@ vec4 trace(const Ray& ray)
     // find closest intersection P of Ray ray
     // call for each sphere, determine closest (smallest t_h?)
     const int num_spheres = spheres.size();
+    vec4 min_intersection_point;
+    //int num_intersections = 0;
     for (int i=0; i < num_spheres; i++)
     {
         // calculate an intersection point
         vec4 intersection_point;
-        // intersect(spheres[i], ray, intersection_point);
+        float intersection_time, min_intersection_time;
+        if (intersect(spheres[i], ray, "object", intersection_point, intersection_time))
+        {
+            if (i == 0)
+            {
+                min_intersection_time = intersection_time;
+                min_intersection_point = intersection_point;
+            }
+            else if (intersection_time < min_intersection_time)
+            {
+                min_intersection_time = intersection_time;
+                min_intersection_point = intersection_point;
+            }
+        }
     }
+    
+    //if (num_intersections == 0) // assuming there is always at least one intersection
     
     
     // compute shadow rays, sum contribution from each light source
@@ -267,7 +312,8 @@ vec4 trace(const Ray& ray)
     
     
     // find color contribution from reflected rays
-    return vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    // placeholder to see if rays being generated correctly
+    return vec4(ray.dir[0], ray.dir[1], ray.dir[2], 1.0f);
 }
 
 vec4 getDir(int ix, int iy)
@@ -292,12 +338,6 @@ void renderPixel(int ix, int iy)
 
 void render()
 {
-    // calculate perspective transformation matrix
-    perspective[0][0] = 1;
-    perspective[1][1] = 1;
-    perspective[2][2] = (g_near+g_far)/g_near;
-    perspective[2][3] = g_near*g_far;
-    perspective[3][2] = -1/g_near;
     
     for (int iy = 0; iy < g_height; iy++)
         for (int ix = 0; ix < g_width; ix++)
