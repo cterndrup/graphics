@@ -157,7 +157,7 @@ float length( const vec2& v ) {
 
 inline
 vec2 normalize( const vec2& v ) {
-    return v / length(v);
+    return (length(v) != 0) ? v / length(v) : 0;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -297,7 +297,7 @@ float length( const vec3& v ) {
 
 inline
 vec3 normalize( const vec3& v ) {
-    return v / length(v);
+    return (length(v) != 0) ? v / length(v) : 0;
 }
 
 inline
@@ -364,7 +364,7 @@ struct vec4 {
     { return vec4( s*x, s*y, s*z, s*w ); }
 
     vec4 operator * ( const vec4& v ) const
-    { return vec4( x*v.x, y*v.y, z*v.z, w*v.z ); }
+    { return vec4( x*v.x, y*v.y, z*v.z, w*v.w ); }
 
     friend vec4 operator * ( const float s, const vec4& v )
     { return v * s; }
@@ -452,7 +452,7 @@ float length( const vec4& v ) {
 
 inline
 vec4 normalize( const vec4& v ) {
-    return v / length(v);
+    return (length(v) != 0) ? v / length(v) : 0;
 }
 
 inline
