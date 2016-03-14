@@ -108,61 +108,30 @@ void parseLine(const vector<string>& vs)
             break;
         case 6:                                    // SPHERE
             s.name = vs[1];
-            //s.x = toFloat(vs[2]); s.y = toFloat(vs[3]); s.z = toFloat(vs[4]);
             s.pos = vec3(toFloat(vs[2]), toFloat(vs[3]), toFloat(vs[4]));
-            //s.scl_x = toFloat(vs[5]); s.scl_y = toFloat(vs[6]); s.scl_z = toFloat(vs[7]);
             s.scl = vec3(toFloat(vs[5]), toFloat(vs[6]), toFloat(vs[7]));
-            //s.color_r = toFloat(vs[8]); s.color_g = toFloat(vs[9]); s.color_b = toFloat(vs[10]);
             s.color = vec3(toFloat(vs[8]), toFloat(vs[9]), toFloat(vs[10]));
-            s.Ka = toFloat(vs[11]); s.Kd = toFloat(vs[12]); s.Kr = toFloat(vs[13]); s.Ks = toFloat(vs[14]);
+            s.Ka = toFloat(vs[11]); s.Kd = toFloat(vs[12]); s.Ks = toFloat(vs[13]); s.Kr = toFloat(vs[14]);
             s.n = toFloat(vs[15]);
             spheres.push_back(s);
             intersected_spheres.push_back(0);
-            /*printf("x: %f, y: %f, z: %f\n", s.x, s.y, s.z);
-            printf("scl_x: %f, scl_y: %f, scl_z: %f\n", s.scl_x, s.scl_y, s.scl_z);
-            printf("color_r: %f, color_g: %f, color_b: %f\n", s.color_r, s.color_g, s.color_b);
-            printf("Ka: %f, Kd: %f, Kr: %f, Ks: %f\n", s.Ka, s.Kd, s.Kr, s.Ks);
-            printf("exponent: %f\n", s.n);
-            printf("\n");*/
-            
             break;
         case 7:                                    // LIGHT
             l.name = vs[1];
-            //l.x = toFloat(vs[2]); l.y = toFloat(vs[3]); l.z = toFloat(vs[4]);
             l.pos = vec3(toFloat(vs[2]), toFloat(vs[3]), toFloat(vs[4]));
-            //l.Ir = toFloat(vs[5]); l.Ig = toFloat(vs[6]); l.Ib = toFloat(vs[7]);
             l.intensity = vec3(toFloat(vs[5]), toFloat(vs[6]), toFloat(vs[7]));
             light_sources.push_back(l);
-            
-            /*printf("x: %f, y: %f, z: %f\n", l.x, l.y, l.z);
-            printf("Ir: %f, Ig: %f, Ib: %f\n", l.Ir, l.Ig, l.Ib);
-            printf("\n");*/
-
             break;
         case 8:                                    // BACK
-            //background_color.r = toFloat(vs[1]);
-            //background_color.g = toFloat(vs[2]);
-            //background_color.b = toFloat(vs[3]);
             background_color.color = vec3(toFloat(vs[1]), toFloat(vs[2]), toFloat(vs[3]));
-            /*printf("r: %f, g: %f, b: %f\n", background_color.r, background_color.g, background_color.b);
-            printf("\n");*/
-
             break;
         case 9:                                    // AMBIENT
-            //ambient_intensity.Ir = toFloat(vs[1]);
-            //ambient_intensity.Ig = toFloat(vs[2]);
-            //ambient_intensity.Ib = toFloat(vs[3]);
             ambient_intensity.intensity = vec3(toFloat(vs[1]), toFloat(vs[2]), toFloat(vs[3]));
-            /*printf("Ir: %f, Ig: %f, Ib: %f\n", ambient_intensity.Ir, ambient_intensity.Ig, ambient_intensity.Ib);
-            printf("\n");*/
-            
             break;
         case 10:                                   // OUTPUT
             outfile = (vs[1]).c_str();
             break;
         default:
-            //cout << "Invalid input file format" << endl;
-            //exit(1);
             break;
     }
     
@@ -192,9 +161,6 @@ void loadFile(const char* filename)
         }
         parseLine(vs);
     }
-    
-    
-    
 }
 
 
@@ -306,7 +272,7 @@ bool intersect(const Sphere& sphere, const Ray& ray, const string& type, vec3& i
     vec4 unit_normal = modelInverse*(vec4(intersection - sphere.pos, 0.0f));
     normal = toVec3(transpose(modelInverse)*unit_normal);
     
-    if (normal[2]*ray.dir[2] > 0) normal *= -1;
+    if (normal[2]*ray.dir[2] > 0) normal *= -1; // ensure correct normal direction pointing towards ray's origin
     
     return true;
     
@@ -379,16 +345,15 @@ vec4 trace(const Ray& ray, const string& type, int count)
     {
         num_intersections = 0;
         L.dir = normalize(vec4(light_sources[i].pos - min_intersection_point, 0.0f));
-        reflection.dir = normalize(2*vec4(min_normal, 0.0f)*dot(vec4(min_normal, 0.0f), L.dir) - L.dir);
+        reflection.dir = 2*vec4(min_normal, 0.0f)*dot(vec4(min_normal, 0.0f), L.dir) - L.dir;
         
         for (int j=0; j < num_spheres; j++)
         {
             
             if (intersect(spheres[i], L, "shadow", intersection_point, shadow_normal, intersection_time))
             {
-                //cout << "sphere: " << i << " light: " << j << " intersection: " << intersection_point << endl;
                 ++num_intersections;
-                //break;
+                break;
             }
                 
         }
@@ -396,14 +361,13 @@ vec4 trace(const Ray& ray, const string& type, int count)
         // add contribution from local illumination
         if (num_intersections == 0)
         {
-            float color_local_r = intersected_sphere.Kd*light_sources[i].intensity[0]*max(dot(min_normal, L.dir),0)*intersected_sphere.color[0] + intersected_sphere.Ks*light_sources[i].intensity[0]*pow(dot(reflection.dir, normalize(-ray.dir)), intersected_sphere.n);
-            float color_local_g = intersected_sphere.Kd*light_sources[i].intensity[1]*max(dot(min_normal, L.dir),0)*intersected_sphere.color[1] + intersected_sphere.Ks*light_sources[i].intensity[1]*pow(dot(reflection.dir, normalize(-ray.dir)), intersected_sphere.n);
-            float color_local_b = intersected_sphere.Kd*light_sources[i].intensity[2]*max(dot(min_normal, L.dir),0)*intersected_sphere.color[2] + intersected_sphere.Ks*light_sources[i].intensity[2]*pow(dot(reflection.dir, normalize(-ray.dir)), intersected_sphere.n);
+            
+            float color_local_r = intersected_sphere.Kd*light_sources[i].intensity[0]*max(dot(normalize(min_normal), normalize(L.dir)),0)*intersected_sphere.color[0] + intersected_sphere.Ks*light_sources[i].intensity[0]*pow(max(dot(reflection.dir, normalize(-ray.dir)),0), intersected_sphere.n);
+            float color_local_g = intersected_sphere.Kd*light_sources[i].intensity[1]*max(dot(normalize(min_normal), normalize(L.dir)),0)*intersected_sphere.color[1] + intersected_sphere.Ks*light_sources[i].intensity[1]*pow(max(dot(reflection.dir, normalize(-ray.dir)),0), intersected_sphere.n);
+            float color_local_b = intersected_sphere.Kd*light_sources[i].intensity[2]*max(dot(normalize(min_normal), normalize(L.dir)),0)*intersected_sphere.color[2] + intersected_sphere.Ks*light_sources[i].intensity[2]*pow(max(dot(reflection.dir, normalize(-ray.dir)),0), intersected_sphere.n);
             
             color_local = color_local + vec3(color_local_r, color_local_g, color_local_b);
-
         }
-
     }
     
     // ambient light
