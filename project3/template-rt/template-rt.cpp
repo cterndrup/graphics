@@ -9,6 +9,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <stack>
 #include <cmath>
 using namespace std;
 
@@ -60,9 +61,10 @@ float g_near;
 vector<struct Sphere> spheres;
 vector<struct Light> light_sources;
 
-const char *outfile; // output file name
+Sphere original_intersected;
+vector<struct Sphere> intersected_spheres;
 
-vector<unsigned int> intersected_spheres;
+string outfile; // output file name
 
 // -------------------------------------------------------------------
 // Input file parsing
@@ -114,7 +116,6 @@ void parseLine(const vector<string>& vs)
             s.Ka = toFloat(vs[11]); s.Kd = toFloat(vs[12]); s.Ks = toFloat(vs[13]); s.Kr = toFloat(vs[14]);
             s.n = toFloat(vs[15]);
             spheres.push_back(s);
-            intersected_spheres.push_back(0);
             break;
         case 7:                                    // LIGHT
             l.name = vs[1];
@@ -129,7 +130,7 @@ void parseLine(const vector<string>& vs)
             ambient_intensity.intensity = vec3(toFloat(vs[1]), toFloat(vs[2]), toFloat(vs[3]));
             break;
         case 10:                                   // OUTPUT
-            outfile = (vs[1]).c_str();
+            outfile = vs[1];
             break;
         default:
             break;
@@ -206,7 +207,7 @@ float max(float x, float y)
 // Intersection routine
 
 // TODO: add your ray-sphere intersection routine here.
-bool intersect(const Sphere& sphere, const Ray& ray, const string& type, vec3& intersection, vec3& normal, float& t_min)
+bool intersect(const Sphere& sphere, const Ray& ray, const string& type, vec3& intersection, vec3& normal, float& t_min, int count)
 {
     // 1. calculate inverse model transform
     mat4 model, modelInverse;
@@ -272,7 +273,8 @@ bool intersect(const Sphere& sphere, const Ray& ray, const string& type, vec3& i
     vec4 unit_normal = modelInverse*(vec4(intersection - sphere.pos, 0.0f));
     normal = toVec3(transpose(modelInverse)*unit_normal);
     
-    if (normal[2]*ray.dir[2] > 0) normal *= -1; // ensure correct normal direction pointing towards ray's origin
+    if (normal[2]*ray.dir[2] > 0)
+        normal *= -1; // ensure correct normal direction pointing towards ray's origin
     
     return true;
     
@@ -304,7 +306,12 @@ vec4 trace(const Ray& ray, const string& type, int count)
     {
         // calculate an intersection point
         float min_intersection_time;
-        if (intersect(spheres[i], ray, type, intersection_point, normal, intersection_time))
+        //if (count > 0)
+        //{
+        //    cout << "cout > 0" << endl;
+        //}
+        if (count > 0 && spheres[i].name.compare(intersected_spheres.back().name) == 0) continue;
+        if (intersect(spheres[i], ray, type, intersection_point, normal, intersection_time, count))
         {
             if (num_intersections == 0)
             {
@@ -325,8 +332,20 @@ vec4 trace(const Ray& ray, const string& type, int count)
         }
     }
     
-    if (num_intersections == 0)
+    intersected_spheres.push_back(intersected_sphere);
+    
+    if (count == 0) original_intersected = intersected_sphere;
+    
+    if (num_intersections == 0 && type.compare("object") == 0)
+    {
+        intersected_spheres.pop_back();
         return vec4(background_color.color, 1.0f);
+    }
+    else if (num_intersections == 0 && type.compare("shadow") == 0)
+    {
+        intersected_spheres.pop_back();
+        return vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    }
     
     // compute shadow rays, sum contribution from each light source
     // for each light source, intersect shadow ray (from point P towards light source) w/ all objects
@@ -345,12 +364,12 @@ vec4 trace(const Ray& ray, const string& type, int count)
     {
         num_intersections = 0;
         L.dir = normalize(vec4(light_sources[i].pos - min_intersection_point, 0.0f));
-        reflection.dir = 2*vec4(min_normal, 0.0f)*dot(vec4(min_normal, 0.0f), L.dir) - L.dir;
+        reflection.dir = normalize(ray.dir) - 2*(dot(vec4(min_normal, 0.0f), normalize(ray.dir)))*vec4(min_normal, 0.0f);
         
         for (int j=0; j < num_spheres; j++)
         {
             
-            if (intersect(spheres[i], L, "shadow", intersection_point, shadow_normal, intersection_time))
+            if (intersect(spheres[i], L, "shadow", intersection_point, shadow_normal, intersection_time, count))
             {
                 ++num_intersections;
                 break;
@@ -378,7 +397,9 @@ vec4 trace(const Ray& ray, const string& type, int count)
     color_local = color_local + vec3(ambient_r, ambient_g, ambient_b);
     
     // add contribution from reflected light
-    color = color_local + intersected_sphere.Kr*toVec3(trace(reflection, "shadow", count+1));
+    vec3 reflected = intersected_sphere.Kr*toVec3(trace(reflection, "shadow", count+1));
+    intersected_spheres.pop_back();
+    color = color_local + reflected;
     
     // clamp
     if (color[0] > 1) color[0] = 1;
@@ -425,7 +446,7 @@ void render()
 // -------------------------------------------------------------------
 // PPM saving
 
-void savePPM(int Width, int Height, const char* fname, unsigned char* pixels)
+void savePPM(int Width, int Height, const char *fname, unsigned char* pixels)
 {
     FILE *fp;
     const int maxVal=255;
@@ -458,7 +479,7 @@ void saveFile()
                 buf[y*g_width*3+x*3+i] = (unsigned char)(((float*)g_colors[y*g_width+x])[i] * 255.0f);
     
     // TODO: change file name based on input file name. DONE
-    savePPM(g_width, g_height, outfile, buf);
+    savePPM(g_width, g_height, outfile.c_str(), buf);
     delete[] buf;
 }
 
