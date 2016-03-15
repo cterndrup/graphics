@@ -207,7 +207,7 @@ float max(float x, float y)
 // Intersection routine
 
 // TODO: add your ray-sphere intersection routine here.
-bool intersect(const Sphere& sphere, const Ray& ray, const string& type, vec3& intersection, vec3& normal, float& t_min, int count)
+bool intersect(const Sphere& sphere, const Ray& ray, const string& type, vec3& intersection, vec3& normal, float& t_min)
 {
     // 1. calculate inverse model transform
     mat4 model, modelInverse;
@@ -237,6 +237,7 @@ bool intersect(const Sphere& sphere, const Ray& ray, const string& type, vec3& i
     
     float t_h;
     float minimum_dist;
+    bool flip_normal = false;
     if (type.compare("object") == 0)
     {
         minimum_dist = 1.0f;
@@ -244,7 +245,11 @@ bool intersect(const Sphere& sphere, const Ray& ray, const string& type, vec3& i
         const float t_larger  = (t1 > t2) ? t1 : t2;
         
         if (t_smaller >= minimum_dist) t_h = t_smaller;
-        else if (t_larger >= minimum_dist) t_h = t_larger;
+        else if (t_larger >= minimum_dist)
+        {
+            t_h = t_larger;
+            flip_normal = true; // viewpoint is inside sphere
+        }
         else return false;
         
     } else if (type.compare("shadow") == 0)
@@ -253,8 +258,12 @@ bool intersect(const Sphere& sphere, const Ray& ray, const string& type, vec3& i
         const float t_smaller = (t1 < t2) ? t1 : t2;
         const float t_larger  = (t1 > t2) ? t1 : t2;
         
-        if (t_smaller >= minimum_dist && t_smaller < 1) t_h = t_smaller;
-        else if (t_larger >= minimum_dist && t_larger < 1) t_h = t_larger;
+        if (t_smaller >= minimum_dist) t_h = t_smaller;
+        else if (t_larger >= minimum_dist)
+        {
+            t_h = t_larger;
+            flip_normal = true;
+        }
         else return false;
         
     } else
@@ -269,12 +278,11 @@ bool intersect(const Sphere& sphere, const Ray& ray, const string& type, vec3& i
     intersection = toVec3(ray.origin + t_h*ray.dir);
     
     // calculate normal
-    //vec4 unit_normal = inverseRay.origin + t_h*inverseRay.dir - vec4(sphere.pos, 1.0f);
     vec4 unit_normal = modelInverse*(vec4(intersection - sphere.pos, 0.0f));
     normal = toVec3(transpose(modelInverse)*unit_normal);
     
-    if (normal[2]*ray.dir[2] > 0)
-        normal *= -1; // ensure correct normal direction pointing towards ray's origin
+    // flip the normal if viewpoint is inside a sphere
+    if (flip_normal || dot(normalize(ray.dir), normalize(normal)) > 0) normal *= -1; // TODO: figure out if this is correct or how to handle this case
     
     return true;
     
@@ -306,12 +314,8 @@ vec4 trace(const Ray& ray, const string& type, int count)
     {
         // calculate an intersection point
         float min_intersection_time;
-        //if (count > 0)
-        //{
-        //    cout << "cout > 0" << endl;
-        //}
         if (count > 0 && spheres[i].name.compare(intersected_spheres.back().name) == 0) continue;
-        if (intersect(spheres[i], ray, type, intersection_point, normal, intersection_time, count))
+        if (intersect(spheres[i], ray, type, intersection_point, normal, intersection_time))
         {
             if (num_intersections == 0)
             {
@@ -355,21 +359,22 @@ vec4 trace(const Ray& ray, const string& type, int count)
     //          if in shadow, no contribution from that light source
     // may need to clamp
     const int num_light_sources = light_sources.size();
-    Ray L, reflection;
+    Ray L, specular_reflection, eye_reflection;
     L.origin = vec4(min_intersection_point, 1.0f);
-    reflection.origin = vec4(min_intersection_point, 1.0f);
+    specular_reflection.origin = vec4(min_intersection_point, 1.0f);
+    eye_reflection.origin = vec4(min_intersection_point, 1.0f);
     min_normal = normalize(min_normal);
+    eye_reflection.dir = normalize(ray.dir) - 2*(dot(vec4(min_normal, 0.0f), normalize(ray.dir)))*vec4(min_normal, 0.0f);
     
     for (int i=0; i < num_light_sources; i++)
     {
         num_intersections = 0;
         L.dir = normalize(vec4(light_sources[i].pos - min_intersection_point, 0.0f));
-        reflection.dir = normalize(ray.dir) - 2*(dot(vec4(min_normal, 0.0f), normalize(ray.dir)))*vec4(min_normal, 0.0f);
+        specular_reflection.dir = normalize(2*vec4(min_normal, 0.0f)*dot(vec4(min_normal, 0.0f), L.dir) - L.dir);
         
         for (int j=0; j < num_spheres; j++)
         {
-            
-            if (intersect(spheres[i], L, "shadow", intersection_point, shadow_normal, intersection_time, count))
+            if (intersect(spheres[j], L, "shadow", intersection_point, shadow_normal, intersection_time))
             {
                 ++num_intersections;
                 break;
@@ -381,9 +386,9 @@ vec4 trace(const Ray& ray, const string& type, int count)
         if (num_intersections == 0)
         {
             
-            float color_local_r = intersected_sphere.Kd*light_sources[i].intensity[0]*max(dot(normalize(min_normal), normalize(L.dir)),0)*intersected_sphere.color[0] + intersected_sphere.Ks*light_sources[i].intensity[0]*pow(max(dot(reflection.dir, normalize(-ray.dir)),0), intersected_sphere.n);
-            float color_local_g = intersected_sphere.Kd*light_sources[i].intensity[1]*max(dot(normalize(min_normal), normalize(L.dir)),0)*intersected_sphere.color[1] + intersected_sphere.Ks*light_sources[i].intensity[1]*pow(max(dot(reflection.dir, normalize(-ray.dir)),0), intersected_sphere.n);
-            float color_local_b = intersected_sphere.Kd*light_sources[i].intensity[2]*max(dot(normalize(min_normal), normalize(L.dir)),0)*intersected_sphere.color[2] + intersected_sphere.Ks*light_sources[i].intensity[2]*pow(max(dot(reflection.dir, normalize(-ray.dir)),0), intersected_sphere.n);
+            float color_local_r = intersected_sphere.Kd*light_sources[i].intensity[0]*max(dot(normalize(min_normal), normalize(L.dir)),0)*intersected_sphere.color[0] + intersected_sphere.Ks*light_sources[i].intensity[0]*pow(max(dot(specular_reflection.dir, normalize(-ray.dir)),0), intersected_sphere.n);
+            float color_local_g = intersected_sphere.Kd*light_sources[i].intensity[1]*max(dot(normalize(min_normal), normalize(L.dir)),0)*intersected_sphere.color[1] + intersected_sphere.Ks*light_sources[i].intensity[1]*pow(max(dot(specular_reflection.dir, normalize(-ray.dir)),0), intersected_sphere.n);
+            float color_local_b = intersected_sphere.Kd*light_sources[i].intensity[2]*max(dot(normalize(min_normal), normalize(L.dir)),0)*intersected_sphere.color[2] + intersected_sphere.Ks*light_sources[i].intensity[2]*pow(max(dot(specular_reflection.dir, normalize(-ray.dir)),0), intersected_sphere.n);
             
             color_local = color_local + vec3(color_local_r, color_local_g, color_local_b);
         }
@@ -397,7 +402,7 @@ vec4 trace(const Ray& ray, const string& type, int count)
     color_local = color_local + vec3(ambient_r, ambient_g, ambient_b);
     
     // add contribution from reflected light
-    vec3 reflected = intersected_sphere.Kr*toVec3(trace(reflection, "shadow", count+1));
+    vec3 reflected = intersected_sphere.Kr*toVec3(trace(eye_reflection, "shadow", count+1));
     intersected_spheres.pop_back();
     color = color_local + reflected;
     
